@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class Class1
+    internal abstract class System
     {
+
     }
 }

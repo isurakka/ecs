@@ -39,8 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="EntityData.cs" />
+    <Compile Include="EntityManager.cs" />
+    <Compile Include="Aspect.cs" />
+    <Compile Include="Entity.cs" />
+    <Compile Include="EntityComponentSystem.cs" />
+    <Compile Include="IComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="System.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
