@@ -8,9 +8,19 @@ namespace ECS
 {
     public class EntityComponentSystem
     {
-        private EntityManager entityManager = new EntityManager();
+        private EntityManager entityManager;
 
         public EntityComponentSystem()
+        {
+            entityManager = new EntityManager();
+        }
+
+        public Entity CreateEntity()
+        {
+            return entityManager.CreateEntity();
+        }
+
+        public void AddComponent(Entity entity, IComponent component)
         {
 
         }

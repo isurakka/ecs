@@ -12,31 +12,45 @@ namespace ECS
 
         private Dictionary<Entity, EntityData> entities = new Dictionary<Entity, EntityData>();
 
-        private Queue<Tuple<Entity, IComponent>> toAdd = new Queue<Tuple<Entity, IComponent>>();
-        private Queue<Tuple<Entity, IComponent>> toRemove = new Queue<Tuple<Entity, IComponent>>();
+        private Queue<Entity> toAddEntity = new Queue<Entity>();
+        private Queue<Tuple<Entity, IComponent>> toAddComponent = new Queue<Tuple<Entity, IComponent>>();
+        private Queue<Tuple<Entity, IComponent>> toRemoveComponent = new Queue<Tuple<Entity, IComponent>>();
+
+        internal EntityManager()
+        {
+
+        }
 
         public Entity CreateEntity()
         {
-            var entity = new Entity(nextId++);
-            entities.Add(entity, new EntityData());
+            var entity = new Entity();
+            toAddEntity.Enqueue(entity);
             return entity;
         }
 
         public void AddComponent(Entity entity, IComponent component)
         {
-            toAdd.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+            toAddComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
         public void RemoveComponent(Entity entity, IComponent component)
         {
-            toRemove.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+            toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
         private void ProcessQueues()
         {
-            while (toRemove.Count > 0)
+            while (toAddEntity.Count > 0)
             {
-                var tuple = toRemove.Dequeue();
+                var entity = toAddEntity.Dequeue();
+                entity.id = nextId++;
+
+                entities.Add(entity, new EntityData());
+            }
+
+            while (toRemoveComponent.Count > 0)
+            {
+                var tuple = toRemoveComponent.Dequeue();
                 var entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();
@@ -45,6 +59,11 @@ namespace ECS
 
                 if (!data.Types.Contains(type))
                 {
+                    if (toAddComponent.Any(t => type == t.Item2.GetType()))
+                    {
+                        throw new ArgumentException("Can't add and remove component of same type in the same update");
+                    }
+
                     throw new ArgumentException("Entity doesn't contain a component of specified type");
                 }
 
@@ -52,9 +71,9 @@ namespace ECS
                 data.Types.Remove(type);
             }
 
-            while (toAdd.Count > 0)
+            while (toAddComponent.Count > 0)
             {
-                var tuple = toAdd.Dequeue();
+                var tuple = toAddComponent.Dequeue();
                 var entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();

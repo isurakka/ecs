@@ -10,9 +10,9 @@ namespace ECS
     {
         internal uint id;
 
-        internal Entity(uint id)
+        internal Entity()
         {
-            this.id = id;
+
         }
 
         public override bool Equals(object obj)

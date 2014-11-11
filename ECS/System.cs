@@ -6,8 +6,17 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    internal abstract class System
+    public abstract class System
     {
+        internal Aspect Aspect;
 
+        internal System(Aspect aspect)
+        {
+            this.Aspect = aspect;
+        }
+
+        protected abstract void processAll(IEnumerable<Entity> entities);
+
+        protected abstract void process(Entity entity);
     }
 }
