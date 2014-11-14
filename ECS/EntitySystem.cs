@@ -14,14 +14,12 @@ namespace ECS
 
         }
 
-        protected sealed override void processAll(IEnumerable<Entity> entities)
+        internal sealed override void processAll(IEnumerable<Entity> entities, float deltaTime)
         {
             foreach (var item in entities)
             {
-                process(item);
+                process(item, deltaTime);
             }
         }
-
-        protected abstract override void process(Entity entity);
     }
 }

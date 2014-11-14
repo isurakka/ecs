@@ -15,8 +15,8 @@ namespace ECS
             this.Aspect = aspect;
         }
 
-        protected abstract void processAll(IEnumerable<Entity> entities);
+        internal abstract void processAll(IEnumerable<Entity> entities, float deltaTime);
 
-        protected abstract void process(Entity entity);
+        protected abstract void process(Entity entity, float deltaTime);
     }
 }

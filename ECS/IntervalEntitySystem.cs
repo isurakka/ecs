@@ -8,20 +8,40 @@ namespace ECS
 {
     public abstract class IntervalEntitySystem : System
     {
-        public IntervalEntitySystem(Aspect aspect)
-            : base(aspect)
-        {
+        private float accumulator;
 
-        }
-
-        protected sealed override void processAll(IEnumerable<Entity> entities)
+        private float interval;
+        public float Interval
         {
-            foreach (var item in entities)
+            get
             {
-                process(item);
+                return interval;
+            }
+            private set
+            {
+                interval = value;
             }
         }
 
-        protected abstract override void process(Entity entity);
+        public IntervalEntitySystem(Aspect aspect, float interval)
+            : base(aspect)
+        {
+            this.interval = interval;
+        }
+
+        internal sealed override void processAll(IEnumerable<Entity> entities, float deltaTime)
+        {
+            accumulator += deltaTime;
+
+            while (accumulator >= interval)
+            {
+                accumulator -= interval;
+
+                foreach (var item in entities)
+                {
+                    process(item, interval);
+                }
+            }
+        }
     }
 }
