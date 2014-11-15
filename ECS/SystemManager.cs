@@ -6,28 +6,84 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class SystemManager
+    internal class SystemManager
     {
-        private SortedDictionary<int, List<System>> systems = new SortedDictionary<int, List<System>>();
+        internal SortedDictionary<int, List<System>> systems = new SortedDictionary<int, List<System>>();
+
+        private Queue<Tuple<int, System>> toAddSystem = new Queue<Tuple<int, System>>();
+        private Queue<Tuple<int, System>> toRemoveSystem = new Queue<Tuple<int, System>>();
 
         internal SystemManager()
         {
 
         }
 
-        public void AddSystem(System system, int priority = 0)
+        internal void AddSystem(System system, int priority)
         {
-            if (systems.Values.Any(syss => syss.Any(sys => sys.GetType() == system.GetType())))
+            toAddSystem.Enqueue(new Tuple<int, System>(priority, system));
+        }
+
+        internal void RemoveSystem(System system, int priority)
+        {
+            toRemoveSystem.Enqueue(new Tuple<int, System>(priority, system));
+        }
+
+        internal void ProcessQueues()
+        {
+            while (toRemoveSystem.Count > 0)
             {
-                throw new ArgumentException("System of this type is already added");
+                var tuple = toRemoveSystem.Dequeue();
+                var priority = tuple.Item1;
+                var system = tuple.Item2;
+
+                for (int i = 0; i < systems[priority].Count; i++)
+                {
+                    if (systems[priority][i] != system)
+                    {
+                        continue;
+                    }
+
+                    systems[priority].RemoveAt(i);
+                    if (systems[priority].Count <= 0)
+                    {
+                        systems.Remove(priority);
+                    }
+
+                    break;
+                }
             }
 
-            if (systems[priority] == null)
+            while (toAddSystem.Count > 0)
             {
-                systems[priority] = new List<System>();
-            }
+                var tuple = toRemoveSystem.Dequeue();
+                var priority = tuple.Item1;
+                var system = tuple.Item2;
 
-            systems[priority].Add(system);
+                if (systems.Values.Any(syss => syss.Any(sys => sys.GetType() == system.GetType())))
+                {
+                    throw new ArgumentException("System of this type is already added");
+                }
+
+                if (systems[priority] == null)
+                {
+                    systems[priority] = new List<System>();
+                }
+
+                systems[priority].Add(system);
+            }
+        }
+
+        internal void UpdateSystem(KeyValuePair<int, List<System>> systemPair, Dictionary<Entity, EntityData> entities, float deltaTime)
+        {
+            foreach (var system in systemPair.Value)
+            {
+                // Is this too slow?
+                var interested = entities
+                    .Where(pair => system.Aspect.Interested(pair.Value.Types))
+                    .Select(pair => pair.Key);
+
+                system.processAll(interested, deltaTime);
+            } 
         }
     }
 }

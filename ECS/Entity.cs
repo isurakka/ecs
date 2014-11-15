@@ -10,9 +10,21 @@ namespace ECS
     {
         internal uint id;
 
-        internal Entity()
-        {
+        internal EntityManager entityManager;
 
+        internal Entity(EntityManager entityManager)
+        {
+            this.entityManager = entityManager;
+        }
+
+        public void AddComponent(IComponent component)
+        {
+            entityManager.AddComponent(this, component);
+        }
+
+        public void RemoveComponent(IComponent component)
+        {
+            entityManager.RemoveComponent(this, component);
         }
 
         public override bool Equals(object obj)

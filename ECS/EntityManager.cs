@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,43 +7,58 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class EntityManager
+    internal class EntityManager
     {
         private uint nextId = 1;
 
-        private Dictionary<Entity, EntityData> entities = new Dictionary<Entity, EntityData>();
+        internal Dictionary<Entity, EntityData> entities = new Dictionary<Entity, EntityData>();
 
-        private Queue<Entity> toAddEntity = new Queue<Entity>();
-        private Queue<Tuple<Entity, IComponent>> toAddComponent = new Queue<Tuple<Entity, IComponent>>();
-        private Queue<Tuple<Entity, IComponent>> toRemoveComponent = new Queue<Tuple<Entity, IComponent>>();
+        private ConcurrentQueue<Entity> toAddEntity = new ConcurrentQueue<Entity>();
+        private ConcurrentQueue<Entity> toRemoveEntity = new ConcurrentQueue<Entity>();
+        private ConcurrentQueue<Tuple<Entity, IComponent>> toAddComponent = new ConcurrentQueue<Tuple<Entity, IComponent>>();
+        private ConcurrentQueue<Tuple<Entity, IComponent>> toRemoveComponent = new ConcurrentQueue<Tuple<Entity, IComponent>>();
 
         internal EntityManager()
         {
 
         }
 
-        public Entity CreateEntity()
+        internal Entity CreateEntity()
         {
-            var entity = new Entity();
+            var entity = new Entity(this);
             toAddEntity.Enqueue(entity);
             return entity;
         }
 
-        public void AddComponent(Entity entity, IComponent component)
+        internal void RemoveEntity(Entity entity)
+        {
+            toRemoveEntity.Enqueue(entity);
+        }
+
+        internal void AddComponent(Entity entity, IComponent component)
         {
             toAddComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
-        public void RemoveComponent(Entity entity, IComponent component)
+        internal void RemoveComponent(Entity entity, IComponent component)
         {
             toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
-        private void ProcessQueues()
+        internal void ProcessQueues()
         {
+            while (toRemoveEntity.Count > 0)
+            {
+                Entity entity;
+                toRemoveEntity.TryDequeue(out entity);
+
+                entities.Remove(entity);
+            }
+
             while (toAddEntity.Count > 0)
             {
-                var entity = toAddEntity.Dequeue();
+                Entity entity;
+                toAddEntity.TryDequeue(out entity);
                 entity.id = nextId++;
 
                 entities.Add(entity, new EntityData());
@@ -50,7 +66,8 @@ namespace ECS
 
             while (toRemoveComponent.Count > 0)
             {
-                var tuple = toRemoveComponent.Dequeue();
+                Tuple<Entity, IComponent> tuple;
+                toRemoveComponent.TryDequeue(out tuple);
                 var entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();
@@ -73,7 +90,8 @@ namespace ECS
 
             while (toAddComponent.Count > 0)
             {
-                var tuple = toAddComponent.Dequeue();
+                Tuple<Entity, IComponent> tuple;
+                toAddComponent.TryDequeue(out tuple);
                 var entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();

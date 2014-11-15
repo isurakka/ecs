@@ -26,5 +26,21 @@ namespace ECS
         {
             entityManager.AddComponent(entity, component);
         }
+
+        public void AddSystem(System system, int priority = 0)
+        {
+            systemManager.AddSystem(system, priority);
+        }
+
+        public void Update(float deltaTime)
+        {
+            foreach (var systemPair in systemManager.systems)
+            {
+                systemManager.UpdateSystem(systemPair, entityManager.entities, deltaTime);
+                entityManager.ProcessQueues();
+            }
+
+            systemManager.ProcessQueues();
+        }
     }
 }
