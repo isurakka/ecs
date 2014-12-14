@@ -44,6 +44,7 @@
     <Compile Include="Aspect.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityComponentSystem.cs" />
+    <Compile Include="IEntityUtility.cs" />
     <Compile Include="IntervalEntitySystem.cs" />
     <Compile Include="ParallelEntitySystem.cs" />
     <Compile Include="EntitySystem.cs" />

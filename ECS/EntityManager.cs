@@ -3,15 +3,16 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECS
 {
-    internal class EntityManager
+    internal class EntityManager : IEntityUtility
     {
-        private uint nextId = 1;
+        private int currentEntityId = int.MinValue;
 
-        internal Dictionary<Entity, EntityData> entities = new Dictionary<Entity, EntityData>();
+        internal List<Entity> entities = new List<Entity>();
 
         private ConcurrentQueue<Entity> toAddEntity = new ConcurrentQueue<Entity>();
         private ConcurrentQueue<Entity> toRemoveEntity = new ConcurrentQueue<Entity>();
@@ -23,26 +24,31 @@ namespace ECS
 
         }
 
-        internal Entity CreateEntity()
+        public Entity CreateEntity()
         {
             var entity = new Entity(this);
             toAddEntity.Enqueue(entity);
             return entity;
         }
 
-        internal void RemoveEntity(Entity entity)
+        public void RemoveEntity(Entity entity)
         {
             toRemoveEntity.Enqueue(entity);
         }
 
-        internal void AddComponent(Entity entity, IComponent component)
+        public void AddComponent(Entity entity, IComponent component)
         {
             toAddComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
-        internal void RemoveComponent(Entity entity, IComponent component)
+        public void RemoveComponent(Entity entity, IComponent component)
         {
             toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+        }
+
+        public T GetComponent<T>(Entity entity) where T: IComponent
+        {
+            throw new NotImplementedException();
         }
 
         internal void ProcessQueues()
@@ -59,7 +65,7 @@ namespace ECS
             {
                 Entity entity;
                 toAddEntity.TryDequeue(out entity);
-                entity.id = nextId++;
+                entity.Id = Interlocked.Increment(ref currentEntityId);
 
                 entities.Add(entity, new EntityData());
             }

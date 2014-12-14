@@ -6,62 +6,56 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class Entity
+    public class Entity : IEquatable<Entity>
     {
-        internal uint id;
+        internal int Id;
 
-        internal EntityManager entityManager;
+        internal List<IComponent> Components = new List<IComponent>();
+        internal HashSet<Type> Types = new HashSet<Type>();
+        internal IEntityUtility EntityUtility;
 
-        internal Entity(EntityManager entityManager)
+        internal Entity(IEntityUtility entityUtility)
         {
-            this.entityManager = entityManager;
+            this.EntityUtility = entityUtility;
         }
 
         public void AddComponent(IComponent component)
         {
-            entityManager.AddComponent(this, component);
+            EntityUtility.AddComponent(this, component);
         }
 
         public void RemoveComponent(IComponent component)
         {
-            entityManager.RemoveComponent(this, component);
+            EntityUtility.RemoveComponent(this, component);
+        }
+
+        public T GetComponent<T>()
+            where T: IComponent
+        {
+            return EntityUtility.GetComponent<T>(this);
+        }
+
+        public bool Equals(Entity other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            return Id.Equals(other.Id);
         }
 
         public override bool Equals(object obj)
         {
-            if (obj == null || GetType() != obj.GetType())
-                return false;
-
-            Entity e = (Entity)obj;
-            return EqualityComparer<Entity>.Default.Equals(e);
+            return Equals(obj as Entity);
         }
 
         public override int GetHashCode()
         {
-            return EqualityComparer<Entity>.Default.GetHashCode();
-        }
-    }
-
-    public class EntityEqualityComparer : EqualityComparer<Entity>
-    {
-        public override bool Equals(Entity x, Entity y)
-        {
-            //if (x == null || y == null)
-            //{
-            //    return false;
-            //}
-
-            if (x.id == y.id)
+            unchecked
             {
-                return true;
+                return Id.GetHashCode();
             }
-
-            return false;
-        }
-
-        public override int GetHashCode(Entity obj)
-        {
-            return unchecked((int)obj.id);
-        }
+        }  
     }
 }

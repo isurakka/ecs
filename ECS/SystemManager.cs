@@ -85,5 +85,10 @@ namespace ECS
                 system.processAll(interested, deltaTime);
             } 
         }
+
+        internal bool Interested(System system, Entity entity)
+        {
+            //return system.Aspect.Interested(entity.)
+        }
     }
 }
