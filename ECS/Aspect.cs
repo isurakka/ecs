@@ -46,7 +46,7 @@ namespace ECS
             return new Aspect().AddAny(types);
         }
 
-        public bool Interested(HashSet<Type> other)
+        public bool Interested(IEnumerable<Type> other)
         {
             return 
                 all.IsSubsetOf(other) && 

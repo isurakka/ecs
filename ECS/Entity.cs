@@ -8,10 +8,10 @@ namespace ECS
 {
     public class Entity : IEquatable<Entity>
     {
-        internal int Id;
+        internal int Id = int.MinValue;
 
         internal List<IComponent> Components = new List<IComponent>();
-        internal HashSet<Type> Types = new HashSet<Type>();
+        //internal HashSet<Type> Types = new HashSet<Type>();
         internal IEntityUtility EntityUtility;
 
         internal Entity(IEntityUtility entityUtility)

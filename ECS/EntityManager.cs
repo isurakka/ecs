@@ -12,7 +12,7 @@ namespace ECS
     {
         private int currentEntityId = int.MinValue;
 
-        internal List<Entity> entities = new List<Entity>();
+        internal HashSet<Entity> entities = new HashSet<Entity>();
 
         private ConcurrentQueue<Entity> toAddEntity = new ConcurrentQueue<Entity>();
         private ConcurrentQueue<Entity> toRemoveEntity = new ConcurrentQueue<Entity>();
@@ -53,64 +53,67 @@ namespace ECS
 
         internal void ProcessQueues()
         {
+            Entity entity;
+            bool success;
+
             while (toRemoveEntity.Count > 0)
             {
-                Entity entity;
-                toRemoveEntity.TryDequeue(out entity);
+                success = toRemoveEntity.TryDequeue(out entity);
+                if (!success)
+                {
+                    throw new InvalidOperationException("Could not remove an entity");
+                }
 
                 entities.Remove(entity);
             }
 
             while (toAddEntity.Count > 0)
             {
-                Entity entity;
-                toAddEntity.TryDequeue(out entity);
+                success = toAddEntity.TryDequeue(out entity);
+                if (!success)
+                {
+                    throw new InvalidOperationException("Could not add an entity");
+                }
                 entity.Id = Interlocked.Increment(ref currentEntityId);
 
-                entities.Add(entity, new EntityData());
+                entities.Add(entity);
             }
+
+            Tuple<Entity, IComponent> tuple;
 
             while (toRemoveComponent.Count > 0)
             {
-                Tuple<Entity, IComponent> tuple;
-                toRemoveComponent.TryDequeue(out tuple);
-                var entity = tuple.Item1;
+                success = toRemoveComponent.TryDequeue(out tuple);
+                if (!success)
+                {
+                    throw new InvalidOperationException("Could not remove a component");
+                }
+
+                entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();
 
-                var data = entities[entity];
-
-                if (!data.Types.Contains(type))
-                {
-                    if (toAddComponent.Any(t => type == t.Item2.GetType()))
-                    {
-                        throw new ArgumentException("Can't add and remove component of same type in the same update");
-                    }
-
-                    throw new ArgumentException("Entity doesn't contain a component of specified type");
-                }
-
-                data.Components.Remove(component);
-                data.Types.Remove(type);
+                entity.Components.Remove(component);
             }
 
             while (toAddComponent.Count > 0)
             {
-                Tuple<Entity, IComponent> tuple;
-                toAddComponent.TryDequeue(out tuple);
-                var entity = tuple.Item1;
+                success = toAddComponent.TryDequeue(out tuple);
+                if (!success)
+                {
+                    throw new InvalidOperationException("Could not add a component");
+                }
+
+                entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();
 
-                var data = entities[entity];
-
-                if (data.Types.Contains(type))
+                if (entity.Components.Any(c => c.GetType() == type))
                 {
-                    throw new ArgumentException("Entity already contains a component of specified type");
+                    throw new ArgumentException("Entity already contains a component of the specified type");
                 }
 
-                data.Components.Add(component);
-                data.Types.Add(type);
+                entity.Components.Add(component);
             }
         }
     }

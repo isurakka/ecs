@@ -36,6 +36,8 @@ namespace ECS
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
 
+                // TODO: Remove everything on the first loop instead of looping for each system
+                bool removed = false;
                 for (int i = 0; i < systems[priority].Count; i++)
                 {
                     if (systems[priority][i] != system)
@@ -47,9 +49,15 @@ namespace ECS
                     if (systems[priority].Count <= 0)
                     {
                         systems.Remove(priority);
+                        removed = true;
                     }
 
                     break;
+                }
+
+                if (!removed)
+                {
+                    throw new ArgumentException("Could not remove the system specified");
                 }
             }
 
@@ -59,7 +67,7 @@ namespace ECS
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
 
-                if (systems.Values.Any(syss => syss.Any(sys => sys.GetType() == system.GetType())))
+                if (systems.Values.Any(systemsPriority => systemsPriority.Any(sys => sys.GetType() == system.GetType())))
                 {
                     throw new ArgumentException("System of this type is already added");
                 }
@@ -70,6 +78,20 @@ namespace ECS
                 }
 
                 systems[priority].Add(system);
+            }
+        }
+
+        internal void UpdateAll(IEnumerable<Entity> entities, float deltaTime, Action priorityCallback)
+        {
+            foreach (var pair in systems)
+            {
+                var priority = pair.Key;
+                var prioritySystems = pair.Value;
+                foreach (var system in prioritySystems)
+	            {
+                    system.processAll(entities.Where(e => system.Aspect.Interested(e.Components.Select(c => c.GetType()))), deltaTime);
+	            }
+                priorityCallback();
             }
         }
 
@@ -88,7 +110,7 @@ namespace ECS
 
         internal bool Interested(System system, Entity entity)
         {
-            //return system.Aspect.Interested(entity.)
+            return system.Aspect.Interested(entity.Types);
         }
     }
 }
