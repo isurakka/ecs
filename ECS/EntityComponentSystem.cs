@@ -29,7 +29,7 @@ namespace ECS
 
         public void AddSystem(System system, int priority = 0)
         {
-            systemManager.AddSystem(system, priority);
+            systemManager.SetSystem(system, priority);
         }
 
         public void Update(float deltaTime)

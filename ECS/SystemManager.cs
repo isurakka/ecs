@@ -18,7 +18,7 @@ namespace ECS
 
         }
 
-        internal void AddSystem(System system, int priority)
+        internal void SetSystem(System system, int priority)
         {
             toAddSystem.Enqueue(new Tuple<int, System>(priority, system));
         }
@@ -36,7 +36,7 @@ namespace ECS
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
 
-                // TODO: Remove everything on the first loop instead of looping for each system
+                // TODO: Remove everything on the first loop instead of looping for each system?
                 bool removed = false;
                 for (int i = 0; i < systems[priority].Count; i++)
                 {
@@ -46,10 +46,11 @@ namespace ECS
                     }
 
                     systems[priority].RemoveAt(i);
+                    removed = true;
+
                     if (systems[priority].Count <= 0)
                     {
                         systems.Remove(priority);
-                        removed = true;
                     }
 
                     break;
@@ -67,14 +68,13 @@ namespace ECS
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
 
-                if (systems.Values.Any(systemsPriority => systemsPriority.Any(sys => sys.GetType() == system.GetType())))
-                {
-                    throw new ArgumentException("System of this type is already added");
-                }
-
                 if (systems[priority] == null)
                 {
                     systems[priority] = new List<System>();
+                }
+                else if (systems[priority].Any(s => s.GetType() == system.GetType()))
+                {
+                    throw new InvalidOperationException("System of this type is already added to this priority level");
                 }
 
                 systems[priority].Add(system);

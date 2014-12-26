@@ -48,7 +48,14 @@ namespace ECS
 
         public T GetComponent<T>(Entity entity) where T: IComponent
         {
-            throw new NotImplementedException();
+            var component = entity.Components.FirstOrDefault(c => c.GetType() == typeof(T));
+            
+            if (component == null)
+            {
+                return default(T);
+            }
+
+            return (T)component;
         }
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
