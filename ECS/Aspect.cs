@@ -50,7 +50,7 @@ namespace ECS
         {
             return 
                 all.IsSubsetOf(other) && 
-                ((any.Count <= 0 || other.Count <= 0) || any.Overlaps(other));
+                ((any.Count <= 0 || other.Count() <= 0) || any.Overlaps(other));
         }
     }
 }

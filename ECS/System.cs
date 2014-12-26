@@ -8,7 +8,7 @@ namespace ECS
 {
     public abstract class System
     {
-        internal Aspect Aspect;
+        internal readonly Aspect Aspect;
 
         internal System(Aspect aspect)
         {

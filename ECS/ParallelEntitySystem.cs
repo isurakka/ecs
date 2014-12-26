@@ -16,7 +16,7 @@ namespace ECS
 
         internal sealed override void processAll(IEnumerable<Entity> entities, float deltaTime)
         {
-            Parallel.ForEach(entities, (ent) => process(ent, deltaTime));
+            Parallel.ForEach(entities, ent => process(ent, deltaTime));
         }
     }
 }

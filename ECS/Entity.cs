@@ -8,7 +8,7 @@ namespace ECS
 {
     public class Entity : IEquatable<Entity>
     {
-        internal int Id = int.MinValue;
+        internal long Id = long.MinValue;
 
         internal List<IComponent> Components = new List<IComponent>();
         //internal HashSet<Type> Types = new HashSet<Type>();
@@ -37,7 +37,7 @@ namespace ECS
 
         public bool Equals(Entity other)
         {
-            if (ReferenceEquals(null, other))
+            if (ReferenceEquals(null, other) || !ReferenceEquals(this.EntityUtility, other.EntityUtility))
             {
                 return false;
             }

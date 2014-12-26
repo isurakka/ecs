@@ -10,7 +10,7 @@ namespace ECS
 {
     internal class EntityManager : IEntityUtility
     {
-        private int currentEntityId = int.MinValue;
+        private long currentEntityId = long.MinValue;
 
         internal HashSet<Entity> entities = new HashSet<Entity>();
 
@@ -51,66 +51,60 @@ namespace ECS
             throw new NotImplementedException();
         }
 
+        internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
+        {
+            foreach (var entity in entities)
+            {
+                if (aspect.Interested(entity.Components.Select(c => c.GetType())))
+                {
+                    yield return entity;
+                }
+            }
+        }
+
         internal void ProcessQueues()
         {
             Entity entity;
-            bool success;
 
-            while (toRemoveEntity.Count > 0)
+            while (toRemoveEntity.TryDequeue(out entity))
             {
-                success = toRemoveEntity.TryDequeue(out entity);
-                if (!success)
+                if (!entities.Remove(entity))
                 {
-                    throw new InvalidOperationException("Could not remove an entity");
+                    throw new InvalidOperationException("No such is added so it can't be removed.");
                 }
-
-                entities.Remove(entity);
             }
 
-            while (toAddEntity.Count > 0)
+            while (toAddEntity.TryDequeue(out entity))
             {
-                success = toAddEntity.TryDequeue(out entity);
-                if (!success)
-                {
-                    throw new InvalidOperationException("Could not add an entity");
-                }
                 entity.Id = Interlocked.Increment(ref currentEntityId);
-
-                entities.Add(entity);
+                if (!entities.Add(entity))
+                {
+                    throw new InvalidOperationException("Could not add the specified entity because it is already added.");
+                }
             }
 
             Tuple<Entity, IComponent> tuple;
 
-            while (toRemoveComponent.Count > 0)
+            while (toRemoveComponent.TryDequeue(out tuple))
             {
-                success = toRemoveComponent.TryDequeue(out tuple);
-                if (!success)
-                {
-                    throw new InvalidOperationException("Could not remove a component");
-                }
-
                 entity = tuple.Item1;
                 var component = tuple.Item2;
-                var type = component.GetType();
-
-                entity.Components.Remove(component);
+                if (!entity.Components.Remove(component))
+                {
+                    throw new InvalidOperationException("Could not remove the specified component " + component +
+                        " because the entity doesn't have it.");
+                }
             }
 
-            while (toAddComponent.Count > 0)
+            while (toAddComponent.TryDequeue(out tuple))
             {
-                success = toAddComponent.TryDequeue(out tuple);
-                if (!success)
-                {
-                    throw new InvalidOperationException("Could not add a component");
-                }
-
                 entity = tuple.Item1;
                 var component = tuple.Item2;
                 var type = component.GetType();
 
                 if (entity.Components.Any(c => c.GetType() == type))
                 {
-                    throw new ArgumentException("Entity already contains a component of the specified type");
+                    throw new InvalidOperationException("Entity already contains a component of the specified type");
                 }
 
                 entity.Components.Add(component);

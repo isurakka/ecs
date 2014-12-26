@@ -81,36 +81,12 @@ namespace ECS
             }
         }
 
-        internal void UpdateAll(IEnumerable<Entity> entities, float deltaTime, Action priorityCallback)
+        internal IEnumerable<IEnumerable<System>> SystemsByPriority()
         {
             foreach (var pair in systems)
             {
-                var priority = pair.Key;
-                var prioritySystems = pair.Value;
-                foreach (var system in prioritySystems)
-	            {
-                    system.processAll(entities.Where(e => system.Aspect.Interested(e.Components.Select(c => c.GetType()))), deltaTime);
-	            }
-                priorityCallback();
+                yield return pair.Value;
             }
-        }
-
-        internal void UpdateSystem(KeyValuePair<int, List<System>> systemPair, Dictionary<Entity, EntityData> entities, float deltaTime)
-        {
-            foreach (var system in systemPair.Value)
-            {
-                // Is this too slow?
-                var interested = entities
-                    .Where(pair => system.Aspect.Interested(pair.Value.Types))
-                    .Select(pair => pair.Key);
-
-                system.processAll(interested, deltaTime);
-            } 
-        }
-
-        internal bool Interested(System system, Entity entity)
-        {
-            return system.Aspect.Interested(entity.Types);
         }
     }
 }

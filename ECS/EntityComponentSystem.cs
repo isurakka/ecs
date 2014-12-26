@@ -34,9 +34,13 @@ namespace ECS
 
         public void Update(float deltaTime)
         {
-            foreach (var systemPair in systemManager.systems)
+            foreach (var systems in systemManager.SystemsByPriority())
             {
-                systemManager.UpdateSystem(systemPair, entityManager.entities, deltaTime);
+                foreach (var system in systems)
+                {
+                    system.processAll(entityManager.GetEntitiesForAspect(system.Aspect), deltaTime);
+                }
+
                 entityManager.ProcessQueues();
             }
 

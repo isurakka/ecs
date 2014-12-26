@@ -39,7 +39,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EntityData.cs" />
     <Compile Include="EntityManager.cs" />
     <Compile Include="Aspect.cs" />
     <Compile Include="Entity.cs" />
