@@ -46,6 +46,11 @@ namespace ECS
             toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
+        public void RemoveComponent<T>(Entity entity) where T : IComponent
+        {
+            toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, entity.Components.FirstOrDefault(c => c.GetType() == typeof(T))));
+        }
+
         public bool HasComponent<T>(Entity entity) where T : IComponent
         {
             return entity.Components.Any(c => c.GetType() == typeof(T));

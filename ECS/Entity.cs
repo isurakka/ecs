@@ -19,6 +19,11 @@ namespace ECS
             this.EntityUtility = entityUtility;
         }
 
+        public void Remove()
+        {
+            EntityUtility.RemoveEntity(this);
+        }
+
         public void AddComponent<T>(T component) where T : IComponent
         {
             EntityUtility.AddComponent(this, component);
@@ -27,6 +32,11 @@ namespace ECS
         public void RemoveComponent<T>(T component) where T: IComponent
         {
             EntityUtility.RemoveComponent(this, component);
+        }
+
+        public void RemoveComponent<T>() where T: IComponent
+        {
+            EntityUtility.RemoveComponent<T>(this);
         }
 
         public bool HasComponent<T>() where T: IComponent
