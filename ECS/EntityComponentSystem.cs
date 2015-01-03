@@ -29,6 +29,12 @@ namespace ECS
             systemManager.SetSystem(system, priority);
         }
 
+        // TODO: Is this needed and is this right place for this method?
+        public IEnumerable<Entity> QueryActiveEntities(Aspect aspect)
+        {
+            return entityManager.GetEntitiesForAspect(aspect);
+        }
+
         public void Update(float deltaTime)
         {
             foreach (var systems in systemManager.SystemsByPriority())
