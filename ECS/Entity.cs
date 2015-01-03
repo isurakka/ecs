@@ -19,14 +19,19 @@ namespace ECS
             this.EntityUtility = entityUtility;
         }
 
-        public void AddComponent(IComponent component)
+        public void AddComponent<T>(T component) where T : IComponent
         {
             EntityUtility.AddComponent(this, component);
         }
 
-        public void RemoveComponent(IComponent component)
+        public void RemoveComponent<T>(T component) where T: IComponent
         {
             EntityUtility.RemoveComponent(this, component);
+        }
+
+        public bool HasComponent<T>() where T: IComponent
+        {
+            return EntityUtility.HasComponent<T>(this);
         }
 
         public T GetComponent<T>()

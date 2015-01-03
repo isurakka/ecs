@@ -36,14 +36,19 @@ namespace ECS
             toRemoveEntity.Enqueue(entity);
         }
 
-        public void AddComponent(Entity entity, IComponent component)
+        public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
             toAddComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
         }
 
-        public void RemoveComponent(Entity entity, IComponent component)
+        public void RemoveComponent<T>(Entity entity, T component) where T : IComponent
         {
             toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+        }
+
+        public bool HasComponent<T>(Entity entity) where T : IComponent
+        {
+            return entity.Components.Any(c => c.GetType() == typeof(T));
         }
 
         public T GetComponent<T>(Entity entity) where T: IComponent
