@@ -10,6 +10,15 @@ namespace ECS
     {
         internal readonly Aspect Aspect;
 
+        internal EntityComponentSystem context;
+        protected EntityComponentSystem Context
+        {
+            get
+            {
+                return context;
+            }
+        }
+
         internal System(Aspect aspect)
         {
             this.Aspect = aspect;

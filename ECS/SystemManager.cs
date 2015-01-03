@@ -8,6 +8,8 @@ namespace ECS
 {
     internal class SystemManager
     {
+        internal EntityComponentSystem context;
+
         internal SortedDictionary<int, List<System>> systems = new SortedDictionary<int, List<System>>();
 
         private Queue<Tuple<int, System>> toAddSystem = new Queue<Tuple<int, System>>();
@@ -67,6 +69,7 @@ namespace ECS
                 var tuple = toAddSystem.Dequeue();
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
+                system.context = context;
 
                 if (!systems.ContainsKey(priority))
                 {

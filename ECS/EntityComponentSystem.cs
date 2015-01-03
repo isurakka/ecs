@@ -14,17 +14,14 @@ namespace ECS
         public EntityComponentSystem()
         {
             entityManager = new EntityManager();
+
             systemManager = new SystemManager();
+            systemManager.context = this;
         }
 
         public Entity CreateEntity()
         {
             return entityManager.CreateEntity();
-        }
-
-        public void AddComponent(Entity entity, IComponent component)
-        {
-            entityManager.AddComponent(entity, component);
         }
 
         public void AddSystem(System system, int priority = 0)
