@@ -36,12 +36,12 @@ namespace ECS
         {
             foreach (var systems in systemManager.SystemsByPriority())
             {
+                entityManager.ProcessQueues();
+
                 foreach (var system in systems)
                 {
                     system.processAll(entityManager.GetEntitiesForAspect(system.Aspect), deltaTime);
                 }
-
-                entityManager.ProcessQueues();
             }
 
             systemManager.ProcessQueues();

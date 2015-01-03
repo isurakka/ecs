@@ -64,11 +64,11 @@ namespace ECS
 
             while (toAddSystem.Count > 0)
             {
-                var tuple = toRemoveSystem.Dequeue();
+                var tuple = toAddSystem.Dequeue();
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
 
-                if (systems[priority] == null)
+                if (!systems.ContainsKey(priority))
                 {
                     systems[priority] = new List<System>();
                 }
