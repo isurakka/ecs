@@ -24,7 +24,26 @@ namespace ECS
             this.Aspect = aspect;
         }
 
-        internal abstract void processAll(IEnumerable<Entity> entities, float deltaTime);
+        protected virtual void begin() {  }
+
+        protected virtual void end() {  }
+
+        internal void Update(IEnumerable<Entity> entities, float deltaTime)
+        {
+            begin();
+
+            var preprocessed = preprocessEntities(entities);
+            processAll(preprocessed, deltaTime);
+
+            end();
+        }
+
+        protected virtual IEnumerable<Entity> preprocessEntities(IEnumerable<Entity> entities)
+        {
+            return entities;
+        }
+
+        private abstract void processAll(IEnumerable<Entity> entities, float deltaTime);
 
         protected abstract void process(Entity entity, float deltaTime);
     }
