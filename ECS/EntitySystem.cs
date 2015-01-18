@@ -18,7 +18,7 @@ namespace ECS
         {
             foreach (var item in entities)
             {
-                process(item, deltaTime);
+                Process(item, deltaTime);
             }
         }
     }

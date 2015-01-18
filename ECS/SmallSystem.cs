@@ -16,7 +16,7 @@ namespace ECS
             this.processor = processor;
         }
 
-        protected override void process(Entity entity, float deltaTime)
+        protected override void Process(Entity entity, float deltaTime)
         {
             if (processor == null)
             {

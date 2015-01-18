@@ -69,7 +69,7 @@ namespace ECS
                 var tuple = toAddSystem.Dequeue();
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
-                system.context = context;
+                system.Context = context;
 
                 if (!systems.ContainsKey(priority))
                 {

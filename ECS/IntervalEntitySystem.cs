@@ -39,7 +39,7 @@ namespace ECS
 
                 foreach (var item in entities)
                 {
-                    process(item, interval);
+                    Process(item, interval);
                 }
             }
         }

@@ -10,12 +10,18 @@ namespace ECS
     {
         internal readonly Aspect Aspect;
 
-        internal EntityComponentSystem context;
-        protected EntityComponentSystem Context
+        internal IEnumerable<Entity> lastInterested;
+
+        private EntityComponentSystem context;
+        protected internal EntityComponentSystem Context
         {
             get
             {
                 return context;
+            }
+            internal set
+            {
+                context = value;
             }
         }
 
@@ -24,27 +30,31 @@ namespace ECS
             this.Aspect = aspect;
         }
 
-        protected virtual void begin() {  }
+        protected virtual void Begin() {  }
 
-        protected virtual void end() {  }
+        protected virtual void End() {  }
+
+        protected internal virtual void OnAdded(Entity entity) {  }
+
+        protected internal virtual void OnRemoved(Entity entity) { }
 
         internal void Update(IEnumerable<Entity> entities, float deltaTime)
         {
-            begin();
+            Begin();
 
-            var preprocessed = preprocessEntities(entities);
+            var preprocessed = PreprocessEntities(entities);
             processAll(preprocessed, deltaTime);
 
-            end();
+            End();
         }
 
-        protected virtual IEnumerable<Entity> preprocessEntities(IEnumerable<Entity> entities)
+        protected virtual IEnumerable<Entity> PreprocessEntities(IEnumerable<Entity> entities)
         {
             return entities;
         }
 
-        private abstract void processAll(IEnumerable<Entity> entities, float deltaTime);
+        internal abstract void processAll(IEnumerable<Entity> entities, float deltaTime);
 
-        protected abstract void process(Entity entity, float deltaTime);
+        protected abstract void Process(Entity entity, float deltaTime);
     }
 }
