@@ -29,7 +29,7 @@ namespace ECS
             this.interval = interval;
         }
 
-        internal sealed override void processAll(IEnumerable<Entity> entities, float deltaTime)
+        protected sealed override void ProcessEntities(IEnumerable<Entity> entities, float deltaTime)
         {
             accumulator += deltaTime;
 
@@ -43,5 +43,7 @@ namespace ECS
                 }
             }
         }
+
+        protected abstract void Process(Entity entity, float deltaTime);
     }
 }

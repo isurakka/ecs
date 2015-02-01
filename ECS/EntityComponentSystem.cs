@@ -44,27 +44,6 @@ namespace ECS
                 foreach (var system in systems)
                 {
                     var entities = entityManager.GetEntitiesForAspect(system.Aspect);
-
-                    if (system.lastInterested == null)
-                    {
-                        system.lastInterested = new List<Entity>();
-                    }
-
-                    var added = entities.Except(system.lastInterested);
-                    var removed = system.lastInterested.Except(entities);
-
-                    foreach (var addedEntity in added)
-                    {
-                        system.OnAdded(addedEntity);
-                    }
-
-                    foreach (var removedEntity in removed)
-                    {
-                        system.OnRemoved(removedEntity);
-                    }
-
-                    system.lastInterested = entities;
-
                     system.Update(entities, deltaTime);
                 }
             }

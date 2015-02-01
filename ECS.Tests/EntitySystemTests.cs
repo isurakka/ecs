@@ -10,20 +10,6 @@ namespace ECS.Tests
     public class TestComponentOne : IComponent { }
     public class TestComponentTwo : IComponent { }
 
-    public class TestSystemOne : EntitySystem
-    {
-        public TestSystemOne()
-            : base(Aspect.All(typeof(TestComponentTwo)))
-        {
-
-        }
-
-        protected override void process(Entity entity, float deltaTime)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class EntitySystemTests
     {
         [Fact()]

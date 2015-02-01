@@ -14,41 +14,41 @@ namespace ECS
 
         internal HashSet<Entity> entities = new HashSet<Entity>();
 
-        private ConcurrentQueue<Entity> toAddEntity = new ConcurrentQueue<Entity>();
-        private ConcurrentQueue<Entity> toRemoveEntity = new ConcurrentQueue<Entity>();
-        private ConcurrentQueue<Tuple<Entity, IComponent>> toAddComponent = new ConcurrentQueue<Tuple<Entity, IComponent>>();
-        private ConcurrentQueue<Tuple<Entity, IComponent>> toRemoveComponent = new ConcurrentQueue<Tuple<Entity, IComponent>>();
+        private ConcurrentBag<Entity> toAddEntity = new ConcurrentBag<Entity>();
+        private ConcurrentBag<Entity> toRemoveEntity = new ConcurrentBag<Entity>();
+        private ConcurrentBag<Tuple<Entity, IComponent>> toAddComponent = new ConcurrentBag<Tuple<Entity, IComponent>>();
+        private ConcurrentBag<Tuple<Entity, IComponent>> toRemoveComponent = new ConcurrentBag<Tuple<Entity, IComponent>>();
 
         internal EntityManager()
         {
-
+            
         }
 
         public Entity CreateEntity()
         {
             var entity = new Entity(this);
-            toAddEntity.Enqueue(entity);
+            toAddEntity.Add(entity);
             return entity;
         }
 
         public void RemoveEntity(Entity entity)
         {
-            toRemoveEntity.Enqueue(entity);
+            toRemoveEntity.Add(entity);
         }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            toAddComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+            toAddComponent.Add(Tuple.Create<Entity, IComponent>(entity, (IComponent)component));
         }
 
         public void RemoveComponent<T>(Entity entity, T component) where T : IComponent
         {
-            toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, component));
+            toRemoveComponent.Add(new Tuple<Entity, IComponent>(entity, component));
         }
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            toRemoveComponent.Enqueue(new Tuple<Entity, IComponent>(entity, entity.Components.FirstOrDefault(c => c.GetType() == typeof(T))));
+            toRemoveComponent.Add(new Tuple<Entity, IComponent>(entity, entity.Components.First(c => c.GetType() == typeof(T))));
         }
 
         public bool HasComponent<T>(Entity entity) where T : IComponent
@@ -83,7 +83,7 @@ namespace ECS
         {
             Entity entity;
 
-            while (toRemoveEntity.TryDequeue(out entity))
+            while (toRemoveEntity.TryTake(out entity))
             {
                 if (!entities.Remove(entity))
                 {
@@ -91,7 +91,7 @@ namespace ECS
                 }
             }
 
-            while (toAddEntity.TryDequeue(out entity))
+            while (toAddEntity.TryTake(out entity))
             {
                 entity.Id = Interlocked.Increment(ref currentEntityId);
                 if (!entities.Add(entity))
@@ -102,7 +102,7 @@ namespace ECS
 
             Tuple<Entity, IComponent> tuple;
 
-            while (toRemoveComponent.TryDequeue(out tuple))
+            while (toRemoveComponent.TryTake(out tuple))
             {
                 entity = tuple.Item1;
                 var component = tuple.Item2;
@@ -113,7 +113,7 @@ namespace ECS
                 }
             }
 
-            while (toAddComponent.TryDequeue(out tuple))
+            while (toAddComponent.TryTake(out tuple))
             {
                 entity = tuple.Item1;
                 var component = tuple.Item2;
