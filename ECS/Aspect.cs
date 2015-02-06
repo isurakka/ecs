@@ -16,6 +16,11 @@ namespace ECS
 
         }
 
+        public static Aspect Empty()
+        {
+            return new Aspect();
+        }
+
         public Aspect AddAll(params Type[] types)
         {
             for (int i = 0; i < types.Length; i++)
@@ -49,7 +54,7 @@ namespace ECS
         public bool Interested(IEnumerable<Type> other)
         {
             return 
-                all.IsSubsetOf(other) && 
+                all.IsSubsetOf(other) &&
                 ((any.Count <= 0 || other.Count() <= 0) || any.Overlaps(other));
         }
     }

@@ -21,7 +21,7 @@ namespace ECS
 
         }
 
-        internal void SetSystem(System system, int priority)
+        internal void AddSystem(System system, int priority)
         {
             toAddSystem.Add(Tuple.Create(priority, system));
         }
@@ -76,9 +76,10 @@ namespace ECS
                 {
                     systems[priority] = new List<System>();
                 }
-                else if (systems[priority].Any(s => s.GetType() == system.GetType()))
+
+                if (systems[priority].Contains(system))
                 {
-                    throw new InvalidOperationException("System of this type is already added to this priority level");
+                    throw new ArgumentException("This system is already in this priority");
                 }
 
                 systems[priority].Add(system);

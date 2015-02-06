@@ -50,7 +50,7 @@
     <Compile Include="EntitySystem.cs" />
     <Compile Include="IComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SmallSystem.cs" />
+    <Compile Include="ClosureEntitySystem.cs" />
     <Compile Include="System.cs" />
     <Compile Include="SystemManager.cs" />
   </ItemGroup>

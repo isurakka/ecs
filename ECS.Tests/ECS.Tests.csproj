@@ -59,8 +59,10 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="EntitySystemTests.cs" />
     <Compile Include="EntityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestClasses.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ECS\ECS.csproj">

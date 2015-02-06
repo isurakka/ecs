@@ -9,9 +9,6 @@ namespace ECS.Tests
 {
     public class EntityTests : IClassFixture<EntityComponentSystem>
     {
-        class TestComponentOne : IComponent { };
-        class TestComponentTwo : IComponent { };
-
         EntityComponentSystem ecs;
 
         public EntityTests(EntityComponentSystem ecs)

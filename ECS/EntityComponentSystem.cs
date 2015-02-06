@@ -24,9 +24,14 @@ namespace ECS
             return entityManager.CreateEntity();
         }
 
-        public void SetSystem(System system, int priority = 0)
+        public void AddSystem(System system, int priority = 0)
         {
-            systemManager.SetSystem(system, priority);
+            systemManager.AddSystem(system, priority);
+        }
+
+        public void RemoveSystem(System system, int priority)
+        {
+            systemManager.RemoveSystem(system, priority);
         }
 
         // TODO: Is this needed and is this right place for this method?

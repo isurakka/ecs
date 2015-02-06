@@ -55,7 +55,7 @@ namespace ECS
                 OnAdded(addedEntity);
             }
 
-            lastInterested = entities;
+            lastInterested = entities.ToList();
 
             // Start of actual processing
             Begin();
