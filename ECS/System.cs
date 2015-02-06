@@ -40,6 +40,8 @@ namespace ECS
 
         internal void Update(IEnumerable<Entity> entities, float deltaTime)
         {
+            // Check for added and removed entities and call the respective methods for them
+            // TODO: There is probably more efficient way to check for added and removed entities
             var added = entities.Except(lastInterested);
             var removed = lastInterested.Except(entities);
 
@@ -55,6 +57,7 @@ namespace ECS
 
             lastInterested = entities;
 
+            // Start of actual processing
             Begin();
 
             var preprocessed = PreprocessEntities(entities);
