@@ -58,6 +58,7 @@ namespace ECS
             lastInterested = entities.ToList();
 
             // Start of actual processing
+            // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)
             Begin();
 
             var preprocessed = PreprocessEntities(entities);

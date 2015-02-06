@@ -208,5 +208,35 @@ namespace ECS.Tests
             ecs.RemoveSystem(sys, 0);
             ecs.Update(1f);
         }
+
+        [Fact()]
+        public void BeginEndTest()
+        {
+            int begin = 0;
+            int end = 0;
+            var sys = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            {
+                BeginAction = () => begin++,
+                EndAction = () => end++,
+            };
+            ecs.AddSystem(sys);
+            
+            ecs.Update(1f);
+            Assert.Equal(1, begin);
+            Assert.Equal(1, end);
+
+            var ent = ecs.CreateEntity();
+            ent.AddComponent(new TestComponentOne());
+            ecs.Update(1f);
+            Assert.Equal(2, begin);
+            Assert.Equal(2, end);
+
+            ent.Remove();
+            ecs.RemoveSystem(sys, 0);
+            ecs.Update(1f);
+
+            Assert.Equal(2, begin);
+            Assert.Equal(2, end);
+        }
     }
 }
