@@ -59,6 +59,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="AspectTests.cs" />
     <Compile Include="EntitySystemTests.cs" />
     <Compile Include="EntityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

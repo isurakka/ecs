@@ -53,9 +53,12 @@ namespace ECS
 
         public bool Interested(IEnumerable<Type> other)
         {
-            return 
-                all.IsSubsetOf(other) &&
-                ((any.Count <= 0 || other.Count() <= 0) || any.Overlaps(other));
+            bool allSuccess = all.IsSubsetOf(other);
+            bool anySuccess = any.Count == 0 || any.Overlaps(other);
+
+            return
+                allSuccess &&
+                anySuccess;
         }
     }
 }
