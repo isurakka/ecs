@@ -12,7 +12,8 @@ namespace ECS
     {
         private long currentEntityId = long.MinValue;
 
-        internal HashSet<Entity> entities = new HashSet<Entity>();
+        //internal HashSet<Entity> entities = new HashSet<Entity>();
+        internal Dictionary<long, Entity> entities = new Dictionary<long, Entity>();
 
         private ConcurrentBag<Entity> toAddEntity = new ConcurrentBag<Entity>();
         private ConcurrentBag<Entity> toRemoveEntity = new ConcurrentBag<Entity>();
@@ -70,8 +71,9 @@ namespace ECS
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
-            foreach (var entity in entities)
+            foreach (var pair in entities)
             {
+                var entity = pair.Value;
                 if (aspect.Interested(entity.Components.Select(c => c.GetType())))
                 {
                     yield return entity;
@@ -85,7 +87,7 @@ namespace ECS
 
             while (toRemoveEntity.TryTake(out entity))
             {
-                if (!entities.Remove(entity))
+                if (!entities.Remove(entity.Id))
                 {
                     throw new InvalidOperationException("No such is added so it can't be removed.");
                 }
@@ -94,10 +96,8 @@ namespace ECS
             while (toAddEntity.TryTake(out entity))
             {
                 entity.Id = Interlocked.Increment(ref currentEntityId);
-                if (!entities.Add(entity))
-                {
-                    throw new InvalidOperationException("Could not add the specified entity because it is already added.");
-                }
+                entities.Add(entity.Id, entity);
+                //throw new InvalidOperationException("Could not add the specified entity because it is already added.");
             }
 
             Tuple<Entity, IComponent> tuple;

@@ -40,6 +40,11 @@ namespace ECS
             return entityManager.GetEntitiesForAspect(aspect);
         }
 
+        public Entity GetEntity(long id)
+        {
+            return entityManager.entities[id];
+        }
+
         public void Update(float deltaTime)
         {
             // Add and remove systems before each update

@@ -31,7 +31,7 @@ namespace ECS.Tests
         }
 
         [Fact()]
-        public void ProcessCorrectEntitiesTest()
+        public void ProcessCorrectIntervalTest()
         {
             var sys = new TestIntervalEntitySystem();
             ecs.AddSystem(sys);
