@@ -49,17 +49,17 @@ namespace ECS
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            toRemoveComponent.Add(new Tuple<Entity, IComponent>(entity, entity.Components.First(c => c.GetType() == typeof(T))));
+            toRemoveComponent.Add(new Tuple<Entity, IComponent>(entity, entity.ComponentSet.First(c => c.GetType() == typeof(T))));
         }
 
         public bool HasComponent<T>(Entity entity) where T : IComponent
         {
-            return entity.Components.Any(c => c.GetType() == typeof(T));
+            return entity.ComponentSet.Any(c => c.GetType() == typeof(T));
         }
 
         public T GetComponent<T>(Entity entity) where T: IComponent
         {
-            var component = entity.Components.FirstOrDefault(c => c.GetType() == typeof(T));
+            var component = entity.ComponentSet.FirstOrDefault(c => c.GetType() == typeof(T));
             
             if (component == null)
             {
@@ -74,7 +74,7 @@ namespace ECS
             foreach (var pair in entities)
             {
                 var entity = pair.Value;
-                if (aspect.Interested(entity.Components.Select(c => c.GetType())))
+                if (aspect.Interested(entity.ComponentSet.Select(c => c.GetType())))
                 {
                     yield return entity;
                 }
@@ -106,7 +106,7 @@ namespace ECS
             {
                 entity = tuple.Item1;
                 var component = tuple.Item2;
-                if (!entity.Components.Remove(component))
+                if (!entity.ComponentSet.Remove(component))
                 {
                     throw new InvalidOperationException("Could not remove the specified component " + component +
                         " because the entity doesn't have it.");
@@ -119,12 +119,12 @@ namespace ECS
                 var component = tuple.Item2;
                 var type = component.GetType();
 
-                if (entity.Components.Any(c => c.GetType() == type))
+                if (entity.ComponentSet.Any(c => c.GetType() == type))
                 {
                     throw new InvalidOperationException("Entity already contains a component of the specified type");
                 }
 
-                entity.Components.Add(component);
+                entity.ComponentSet.Add(component);
             }
         }
     }

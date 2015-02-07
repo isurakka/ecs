@@ -10,9 +10,17 @@ namespace ECS
     {
         internal long Id = long.MinValue;
 
-        internal HashSet<IComponent> Components = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
+        internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
         //internal HashSet<Type> Types = new HashSet<Type>();
         internal IEntityUtility EntityUtility;
+
+        public IEnumerable<IComponent> Components
+        {
+            get
+            {
+                return ComponentSet.AsEnumerable();
+            }
+        }
 
         internal Entity(IEntityUtility entityUtility)
         {
