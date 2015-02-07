@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public abstract class IntervalEntitySystem : System
+    public abstract class IntervalEntitySystem : EntitySystem
     {
         private float accumulator;
 

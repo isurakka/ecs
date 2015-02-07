@@ -61,8 +61,7 @@ namespace ECS
 
                 foreach (var system in systems)
                 {
-                    var entities = entityManager.GetEntitiesForAspect(system.Aspect);
-                    system.Update(entities, deltaTime);
+                    system.Update(deltaTime);
                 }
             }
 

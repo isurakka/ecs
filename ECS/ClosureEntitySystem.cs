@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class ClosureEntitySystem : EntitySystem
+    public class ClosureEntitySystem : EntityProcessingSystem
     {
         public Action<Entity, float> ProcessorAction;
         public Action BeginAction;

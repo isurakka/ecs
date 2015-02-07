@@ -8,10 +8,6 @@ namespace ECS
 {
     public abstract class System
     {
-        internal readonly Aspect Aspect;
-
-        internal IEnumerable<Entity> lastInterested = new List<Entity>();
-
         private EntityComponentSystem context;
         protected internal EntityComponentSystem Context
         {
@@ -25,53 +21,16 @@ namespace ECS
             }
         }
 
-        internal System(Aspect aspect)
+        public System()
         {
-            this.Aspect = aspect;
+            
         }
 
-        protected virtual void Begin() {  }
-
-        protected virtual void End() {  }
-
-        protected virtual void OnAdded(Entity entity) {  }
-
-        protected virtual void OnRemoved(Entity entity) { }
-
-        internal void Update(IEnumerable<Entity> entities, float deltaTime)
+        internal virtual void Update(float deltaTime)
         {
-            // Check for added and removed entities and call the respective methods for them
-            // TODO: There is probably more efficient way to check for added and removed entities
-            var added = entities.Except(lastInterested);
-            var removed = lastInterested.Except(entities);
-
-            foreach (var removedEntity in removed)
-            {
-                OnRemoved(removedEntity);
-            }
-
-            foreach (var addedEntity in added)
-            {
-                OnAdded(addedEntity);
-            }
-
-            lastInterested = entities.ToList();
-
-            // Start of actual processing
-            // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)
-            Begin();
-
-            var preprocessed = PreprocessEntities(entities);
-            ProcessEntities(preprocessed, deltaTime);
-
-            End();
+            Process(deltaTime);
         }
 
-        protected virtual IEnumerable<Entity> PreprocessEntities(IEnumerable<Entity> entities)
-        {
-            return entities;
-        }
-
-        protected abstract void ProcessEntities(IEnumerable<Entity> entities, float deltaTime);
+        protected abstract void Process(float deltaTime);
     }
 }

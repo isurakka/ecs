@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public abstract class ParallelEntitySystem : EntitySystem
+    public abstract class EntityProcessingSystem : EntitySystem
     {
-        public ParallelEntitySystem(Aspect aspect)
+        public EntityProcessingSystem(Aspect aspect)
             : base(aspect)
         {
 
@@ -16,7 +16,10 @@ namespace ECS
 
         protected sealed override void ProcessEntities(IEnumerable<Entity> entities, float deltaTime)
         {
-            Parallel.ForEach(entities, ent => Process(ent, deltaTime));
+            foreach (var item in entities)
+            {
+                Process(item, deltaTime);
+            }
         }
 
         protected abstract void Process(Entity entity, float deltaTime);
