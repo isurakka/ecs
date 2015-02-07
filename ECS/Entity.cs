@@ -8,11 +8,22 @@ namespace ECS
 {
     public class Entity : IEquatable<Entity>
     {
-        internal long Id = long.MinValue;
-
         internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
         //internal HashSet<Type> Types = new HashSet<Type>();
         internal IEntityUtility EntityUtility;
+
+        private long id = long.MinValue;
+        public long Id
+        {
+            internal set
+            {
+                id = value;
+            }
+            get
+            {
+                return id;
+            }
+        }
 
         public IEnumerable<IComponent> Components
         {

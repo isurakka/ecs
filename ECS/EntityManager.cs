@@ -28,6 +28,7 @@ namespace ECS
         public Entity CreateEntity()
         {
             var entity = new Entity(this);
+            entity.Id = Interlocked.Increment(ref currentEntityId);
             toAddEntity.Add(entity);
             return entity;
         }
@@ -95,7 +96,6 @@ namespace ECS
 
             while (toAddEntity.TryTake(out entity))
             {
-                entity.Id = Interlocked.Increment(ref currentEntityId);
                 entities.Add(entity.Id, entity);
                 //throw new InvalidOperationException("Could not add the specified entity because it is already added.");
             }
