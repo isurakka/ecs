@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public abstract class IntervalEntitySystem : EntitySystem
+    public abstract class IntervalEntityProcessingSystem : EntitySystem
     {
         private float accumulator;
 
@@ -23,7 +23,7 @@ namespace ECS
             }
         }
 
-        public IntervalEntitySystem(Aspect aspect, float interval)
+        public IntervalEntityProcessingSystem(Aspect aspect, float interval)
             : base(aspect)
         {
             this.interval = interval;

@@ -9,7 +9,7 @@ namespace ECS.Tests
 {
     public class IntervalEntitySystemTests : IClassFixture<EntityComponentSystem>
     {
-        class TestIntervalEntitySystem : IntervalEntitySystem
+        class TestIntervalEntitySystem : IntervalEntityProcessingSystem
         {
             public int Processings = 0;
 

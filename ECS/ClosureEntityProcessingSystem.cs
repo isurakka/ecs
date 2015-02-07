@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class ClosureEntitySystem : EntityProcessingSystem
+    public class ClosureEntityProcessingSystem : EntityProcessingSystem
     {
         public Action<Entity, float> ProcessorAction;
         public Action BeginAction;
@@ -15,7 +15,7 @@ namespace ECS
         public Action<Entity> OnRemovedAction;
         public Func<IEnumerable<Entity>, IEnumerable<Entity>> PreprocessEntitiesAction;
 
-        public ClosureEntitySystem(Aspect aspect, Action<Entity, float> processor)
+        public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor)
             : base(aspect)
         {
             this.ProcessorAction = processor;

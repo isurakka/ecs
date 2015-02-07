@@ -20,7 +20,7 @@ namespace ECS.Tests
         public void ProcessCorrectEntitiesTest()
         {
             int processings = 0;
-            var sys = new ClosureEntitySystem(Aspect.Empty(), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
             {
                 ProcessorAction = (e, dt) => processings++,
             };
@@ -72,14 +72,14 @@ namespace ECS.Tests
         public void ProcessCorrectEntitiesWithComponentsTest()
         {
             int processings1 = 0;
-            var sys1 = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            var sys1 = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 ProcessorAction = (e, dt) => processings1++,
             };
             ecs.AddSystem(sys1);
 
             int processings2 = 0;
-            var sys2 = new ClosureEntitySystem(Aspect.All(typeof(TestComponentTwo)), null)
+            var sys2 = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentTwo)), null)
             {
                 ProcessorAction = (e, dt) => processings2++,
             };
@@ -112,7 +112,7 @@ namespace ECS.Tests
         public void OnAddedTest()
         {
             int onAdded = 0;
-            var sys = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 OnAddedAction = (e) => onAdded++,
             };
@@ -146,7 +146,7 @@ namespace ECS.Tests
         public void OnRemovedComponentOnlyTest()
         {
             int onRemoved = 0;
-            var sys = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 OnRemovedAction = (e) => onRemoved++,
             };
@@ -183,7 +183,7 @@ namespace ECS.Tests
         public void OnRemovedWholeEntityTest()
         {
             int onRemoved = 0;
-            var sys = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 OnRemovedAction = (e) => onRemoved++,
             };
@@ -214,7 +214,7 @@ namespace ECS.Tests
         {
             int begin = 0;
             int end = 0;
-            var sys = new ClosureEntitySystem(Aspect.All(typeof(TestComponentOne)), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 BeginAction = () => begin++,
                 EndAction = () => end++,

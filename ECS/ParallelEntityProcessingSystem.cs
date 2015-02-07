@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public abstract class ParallelEntitySystem : EntitySystem
+    public abstract class ParallelEntityProcessingSystem : EntitySystem
     {
-        public ParallelEntitySystem(Aspect aspect)
+        public ParallelEntityProcessingSystem(Aspect aspect)
             : base(aspect)
         {
 
