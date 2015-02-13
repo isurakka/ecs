@@ -238,5 +238,31 @@ namespace ECS.Tests
             Assert.Equal(2, begin);
             Assert.Equal(2, end);
         }
+
+        [Fact()]
+        public void SystemProcessOrderTest()
+        {
+            var pro1 = false;
+            var pro2 = false;
+
+            var sys1 = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
+            {
+                ProcessorAction = (e, dt) => { pro1 = true; Assert.False(pro2); }
+            };
+            var sys2 = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
+            {
+                ProcessorAction = (e, dt) => { pro2 = true; Assert.True(pro1); }
+            };
+
+            var ent = ecs.CreateEntity();
+            ecs.AddSystem(sys2, 1);
+            ecs.AddSystem(sys1);
+            ecs.Update(1f);
+
+            ent.Remove();
+            ecs.RemoveSystem(sys1, 0);
+            ecs.RemoveSystem(sys2, 1);
+            ecs.Update(1f);
+        }
     }
 }
