@@ -83,7 +83,12 @@ namespace ECS
 
         public T GetComponent<T>() where T: IComponent
         {
-            return (T)ComponentSet[typeof(T)];
+            if (ComponentSet.ContainsKey(typeof(T)))
+            {
+                return (T)ComponentSet[typeof(T)];
+            }
+
+            return default(T);
         }
 
         public bool Equals(Entity other)

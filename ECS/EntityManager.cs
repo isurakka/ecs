@@ -41,7 +41,7 @@ namespace ECS
             foreach (var pair in entities)
             {
                 var entity = pair.Value;
-                if (aspect.Interested(entity.ComponentSet.Select(c => c.GetType())))
+                if (aspect.Interested(entity.ComponentSet.Keys))
                 {
                     yield return entity;
                 }

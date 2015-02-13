@@ -46,8 +46,6 @@ namespace ECS.Tests
         {
             var ent = ecs.CreateEntity();
             ent.AddComponent(new TestComponentOne());
-            ecs.Update(1f);
-
             ent.RemoveComponent<TestComponentOne>();
             ecs.Update(1f);
 
@@ -63,8 +61,6 @@ namespace ECS.Tests
             var ent = ecs.CreateEntity();
             var tc = new TestComponentOne();
             ent.AddComponent(tc);
-            ecs.Update(1f);
-
             ent.RemoveComponent(tc);
             ecs.Update(1f);
 
@@ -83,15 +79,14 @@ namespace ECS.Tests
             Assert.False(ent.HasComponent<TestComponentOne>());
 
             ent.AddComponent(tc);
-            ecs.Update(1f);
 
             Assert.True(ent.HasComponent<TestComponentOne>());
 
             ent.RemoveComponent(tc);
-            ecs.Update(1f);
 
             Assert.False(ent.HasComponent<TestComponentOne>());
 
+            ecs.Update(1f);
             ent.Remove();
             ecs.Update(1f);
         }
@@ -107,7 +102,6 @@ namespace ECS.Tests
             Assert.Equal(null, ent.GetComponent<TestComponentOne>());
 
             ent.AddComponent(tc);
-            ecs.Update(1f);
 
             Assert.Equal(tc, ent.GetComponent<TestComponentOne>());
 
