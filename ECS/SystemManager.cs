@@ -13,8 +13,8 @@ namespace ECS
 
         internal SortedDictionary<int, List<System>> systems = new SortedDictionary<int, List<System>>();
 
-        private ConcurrentBag<Tuple<int, System>> toAddSystem = new ConcurrentBag<Tuple<int, System>>();
-        private ConcurrentBag<Tuple<int, System>> toRemoveSystem = new ConcurrentBag<Tuple<int, System>>();
+        private ConcurrentQueue<Tuple<int, System>> toAddSystem = new ConcurrentQueue<Tuple<int, System>>();
+        private ConcurrentQueue<Tuple<int, System>> toRemoveSystem = new ConcurrentQueue<Tuple<int, System>>();
 
         internal SystemManager()
         {
@@ -23,19 +23,19 @@ namespace ECS
 
         internal void AddSystem(System system, int priority)
         {
-            toAddSystem.Add(Tuple.Create(priority, system));
+            toAddSystem.Enqueue(Tuple.Create(priority, system));
         }
 
         internal void RemoveSystem(System system, int priority)
         {
-            toRemoveSystem.Add(Tuple.Create(priority, system));
+            toRemoveSystem.Enqueue(Tuple.Create(priority, system));
         }
 
         internal void ProcessQueues()
         {
             Tuple<int, System> tuple;
 
-            while (toRemoveSystem.TryTake(out tuple))
+            while (toRemoveSystem.TryDequeue(out tuple))
             {
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
@@ -66,7 +66,7 @@ namespace ECS
                 }
             }
 
-            while (toAddSystem.TryTake(out tuple))
+            while (toAddSystem.TryDequeue(out tuple))
             {
                 var priority = tuple.Item1;
                 var system = tuple.Item2;
