@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,8 @@ namespace ECS
 {
     public class Entity : IEquatable<Entity>
     {
-        internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
+        //internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
+        internal ConcurrentDictionary<Type, IComponent> ComponentSet = new ConcurrentDictionary<Type, IComponent>();
         //internal HashSet<Type> Types = new HashSet<Type>();
         internal IEntityUtility EntityUtility;
 
@@ -29,7 +31,7 @@ namespace ECS
         {
             get
             {
-                return ComponentSet.AsEnumerable();
+                return ComponentSet.Values.AsEnumerable();
             }
         }
 
@@ -45,28 +47,43 @@ namespace ECS
 
         public void AddComponent<T>(T component) where T : IComponent
         {
-            EntityUtility.AddComponent(this, component);
+            var success = ComponentSet.TryAdd(component.GetType(), component);
+            if (!success)
+            {
+                throw new InvalidOperationException("Entity already contains a component of the specified type");
+            }
         }
 
         public void RemoveComponent<T>(T component) where T: IComponent
         {
-            EntityUtility.RemoveComponent(this, component);
+            IComponent removed;
+            var success = ComponentSet.TryRemove(component.GetType(), out removed);
+            if (!success)
+            {
+                throw new InvalidOperationException("Could not remove the specified component " + component +
+                        " because the entity doesn't have it.");
+            }
         }
 
         public void RemoveComponent<T>() where T: IComponent
         {
-            EntityUtility.RemoveComponent<T>(this);
+            IComponent removed;
+            var success = ComponentSet.TryRemove(typeof(T), out removed);
+            if (!success)
+            {
+                throw new InvalidOperationException("Could not remove the component of specified type " + typeof(T) +
+                        " because the entity doesn't have it.");
+            }
         }
 
         public bool HasComponent<T>() where T: IComponent
         {
-            return EntityUtility.HasComponent<T>(this);
+            return ComponentSet.ContainsKey(typeof(T));
         }
 
-        public T GetComponent<T>()
-            where T: IComponent
+        public T GetComponent<T>() where T: IComponent
         {
-            return EntityUtility.GetComponent<T>(this);
+            return (T)ComponentSet[typeof(T)];
         }
 
         public bool Equals(Entity other)
