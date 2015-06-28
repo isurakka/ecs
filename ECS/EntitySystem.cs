@@ -27,7 +27,7 @@ namespace ECS
 
         internal sealed override void Update(float deltaTime)
         {
-            var entities = Context.FindEntities(Aspect);
+            var entities = Context.GetEntities(Aspect);
 
             // Check for added and removed entities and call the respective methods for them
             // TODO: There is probably more efficient way to check for added and removed entities

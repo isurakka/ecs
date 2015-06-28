@@ -6,7 +6,16 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class EntityComponentSystem
+    public interface IEntityComponentSystem
+    {
+        Entity CreateEntity();
+        void AddSystem(System system, int priority = 0);
+        void RemoveSystem(System system, int priority);
+        //Entity GetEntity(long id);
+        void Update(float deltaTime);
+    }
+
+    public class EntityComponentSystem : IEntityComponentSystem
     {
         private EntityManager entityManager;
         private SystemManager systemManager;
@@ -35,15 +44,18 @@ namespace ECS
         }
 
         // TODO: Is this needed and is this right place for this method?
-        public IEnumerable<Entity> FindEntities(Aspect aspect)
+        public IEnumerable<Entity> GetEntities(Aspect aspect)
         {
-            return entityManager.GetEntitiesForAspect(aspect);
+            return entityManager.GetEntities(aspect);
         }
 
+        // TODO: Is this needed?
+        /*
         public Entity GetEntity(long id)
         {
             return entityManager.entities[id];
         }
+        */
 
         public void Update(float deltaTime)
         {

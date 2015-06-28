@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    internal class SystemManager
+    public interface ISystemManager
+    {
+        void AddSystem(System system, int priority);
+        void RemoveSystem(System system, int priority);
+    }
+
+    internal class SystemManager : ISystemManager
     {
         internal EntityComponentSystem context;
 

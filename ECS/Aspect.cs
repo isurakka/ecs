@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,12 +9,24 @@ namespace ECS
 {
     public class Aspect
     {
-        private HashSet<Type> all = new HashSet<Type>();
-        private HashSet<Type> any = new HashSet<Type>();
+        private BigInteger all = new BigInteger();
+        private BigInteger any = new BigInteger();
 
         internal Aspect()
         {
 
+        }
+
+        private static int nextTypeIndexShift = 0;
+        private static Dictionary<Type, int> typeIndex = new Dictionary<Type,int>();
+        private static BigInteger MapType(Type type)
+        {
+            if (!typeIndex.ContainsKey(type))
+            {
+                typeIndex.Add(type, nextTypeIndexShift++);
+            }
+
+            return BigInteger.One << typeIndex[type];
         }
 
         public static Aspect Empty()
@@ -23,9 +36,9 @@ namespace ECS
 
         public Aspect AddAll(params Type[] types)
         {
-            for (int i = 0; i < types.Length; i++)
+            foreach (var type in types)
             {
-                all.Add(types[i]);
+                all &= MapType(type);
             }
 
             return this;
@@ -38,9 +51,9 @@ namespace ECS
 
         public Aspect AddAny(params Type[] types)
         {
-            for (int i = 0; i < types.Length; i++)
+            foreach (var type in types)
             {
-                any.Add(types[i]);
+                any &= MapType(type);
             }
 
             return this;
@@ -51,14 +64,12 @@ namespace ECS
             return new Aspect().AddAny(types);
         }
 
-        public bool Interested(IEnumerable<Type> other)
+        public bool Interested(BigInteger other)
         {
-            bool allSuccess = all.IsSubsetOf(other);
-            bool anySuccess = any.Count == 0 || any.Overlaps(other);
+            bool allSuccess = (all & other).Equals(all);
+            bool anySuccess = !(any & other).IsZero;
 
-            return
-                allSuccess &&
-                anySuccess;
+            return allSuccess && anySuccess;
         }
     }
 }

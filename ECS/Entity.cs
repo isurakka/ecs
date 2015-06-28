@@ -7,6 +7,16 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
+    public interface IEntity<TIdentifier>
+        where TIdentifier : struct
+    {
+        TIdentifier Id { get; }
+        void AddComponent<T>(T component) where T: IComponent;
+        void RemoveComponent<T>(T component) where T : IComponent;
+        IComponent GetComponent<T>();
+        bool HasComponent<T>();
+    }
+
     public class Entity : IEquatable<Entity>
     {
         //internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
@@ -14,8 +24,8 @@ namespace ECS
         //internal HashSet<Type> Types = new HashSet<Type>();
         internal IEntityUtility EntityUtility;
 
-        private long id = long.MinValue;
-        public long Id
+        private int id;
+        public int Id
         {
             internal set
             {

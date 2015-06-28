@@ -21,10 +21,10 @@ namespace ECS.Tests
         {
             var ent = ecs.CreateEntity();
             ecs.Update(1f);
-            Assert.Equal(ent, ecs.FindEntities(Aspect.Any()).First());
+            Assert.Equal(ent, ecs.GetEntities(Aspect.Any()).First());
             ent.Remove();
             ecs.Update(1f);
-            Assert.Equal(null, ecs.FindEntities(Aspect.Any()).FirstOrDefault());
+            Assert.Equal(null, ecs.GetEntities(Aspect.Any()).FirstOrDefault());
         }
 
         [Fact()]
@@ -34,8 +34,8 @@ namespace ECS.Tests
             var tc = new TestComponentOne();
             ent.AddComponent(tc);
             ecs.Update(1f);
-            Assert.Equal(ent, ecs.FindEntities(Aspect.All(typeof(TestComponentOne))).FirstOrDefault());
-            Assert.Equal(null, ecs.FindEntities(Aspect.All(typeof(TestComponentTwo))).FirstOrDefault());
+            Assert.Equal(ent, ecs.GetEntities(Aspect.All(typeof(TestComponentOne))).FirstOrDefault());
+            Assert.Equal(null, ecs.GetEntities(Aspect.All(typeof(TestComponentTwo))).FirstOrDefault());
 
             ent.Remove();
             ecs.Update(1f);
@@ -49,7 +49,7 @@ namespace ECS.Tests
             ent.RemoveComponent<TestComponentOne>();
             ecs.Update(1f);
 
-            Assert.Equal(null, ecs.FindEntities(Aspect.All(typeof(TestComponentTwo))).FirstOrDefault());
+            Assert.Equal(null, ecs.GetEntities(Aspect.All(typeof(TestComponentTwo))).FirstOrDefault());
 
             ent.Remove();
             ecs.Update(1f);
@@ -64,7 +64,7 @@ namespace ECS.Tests
             ent.RemoveComponent(tc);
             ecs.Update(1f);
 
-            Assert.Equal(null, ecs.FindEntities(Aspect.All(typeof(TestComponentOne))).FirstOrDefault());
+            Assert.Equal(null, ecs.GetEntities(Aspect.All(typeof(TestComponentOne))).FirstOrDefault());
 
             ent.Remove();
             ecs.Update(1f);

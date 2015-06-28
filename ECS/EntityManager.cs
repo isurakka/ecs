@@ -2,21 +2,25 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECS
 {
-    internal class EntityManager : IEntityUtility
+    public interface IEntityManager
     {
-        private long currentEntityId = long.MinValue;
+        Entity CreateEntity();
+        void RemoveEntity(Entity entity);
+        IEnumerable<Entity> GetEntities(Aspect aspect);
+    }
 
-        //internal HashSet<Entity> entities = new HashSet<Entity>();
-        internal Dictionary<long, Entity> entities = new Dictionary<long, Entity>();
-
-        private ConcurrentBag<Entity> toAddEntity = new ConcurrentBag<Entity>();
-        private ConcurrentBag<Entity> toRemoveEntity = new ConcurrentBag<Entity>();
+    internal class EntityManager : IEntityManager, IEntityUtility
+    {
+        internal int nextEntityId = 0;
+        internal BigInteger[] entityComponentCache;
+        internal Dictionary<Type, IComponent[]> components;
 
         internal EntityManager()
         {
@@ -26,17 +30,21 @@ namespace ECS
         public Entity CreateEntity()
         {
             var entity = new Entity(this);
-            entity.Id = Interlocked.Increment(ref currentEntityId);
-            toAddEntity.Add(entity);
+            entity.Id = nextEntityId++;
             return entity;
         }
 
         public void RemoveEntity(Entity entity)
         {
-            toRemoveEntity.Add(entity);
+            //toRemoveEntity.Add(entity);
         }
 
-        internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
+        private void growBuffer<T>(ref T[] array)
+        {
+            Array.Resize(ref array, array.Length * 2);
+        }
+
+        internal IEnumerable<Entity> GetEntities(Aspect aspect)
         {
             foreach (var pair in entities)
             {
