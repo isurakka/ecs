@@ -9,23 +9,9 @@ namespace ECS
 {
     public class Entity : IEquatable<Entity>
     {
-        //internal HashSet<IComponent> ComponentSet = new HashSet<IComponent>(ComponentEqualityComparer.Instance);
-        internal ConcurrentDictionary<Type, IComponent> ComponentSet = new ConcurrentDictionary<Type, IComponent>();
-        //internal HashSet<Type> Types = new HashSet<Type>();
-        internal IEntityUtility EntityUtility;
+        public int Id { get; internal set; }
 
-        private long id = long.MinValue;
-        public long Id
-        {
-            internal set
-            {
-                id = value;
-            }
-            get
-            {
-                return id;
-            }
-        }
+        internal IEntityUtility EntityUtility;
 
         public IEnumerable<IComponent> Components
         {
@@ -35,7 +21,7 @@ namespace ECS
             }
         }
 
-        internal Entity(IEntityUtility entityUtility)
+        internal Entity(int id, IEntityUtility entityUtility)
         {
             this.EntityUtility = entityUtility;
         }

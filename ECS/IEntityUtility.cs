@@ -8,6 +8,9 @@ namespace ECS
 {
     interface IEntityUtility
     {
+        void AddComponent<T>(Entity entity, T component) where T : IComponent;
+        void RemoveComponent<T>(Entity entity, T component) where T : IComponent;
+        IEnumerable<IComponent> GetComponents(Entity entity);
         void RemoveEntity(Entity entity);
     }
 }

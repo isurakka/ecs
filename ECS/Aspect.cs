@@ -1,64 +1,62 @@
-﻿using System;
+﻿using ECS;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class Aspect
+    public class AspectFactory
     {
-        private HashSet<Type> all = new HashSet<Type>();
-        private HashSet<Type> any = new HashSet<Type>();
+        private ComponentTypesToBigIntegerMapper mapper;
 
-        internal Aspect()
+        internal AspectFactory(ComponentTypesToBigIntegerMapper mapper)
         {
-
+            this.mapper = mapper;
         }
 
-        public static Aspect Empty()
+        public Aspect All(params Type[] types)
         {
-            return new Aspect();
+            return new Aspect(mapper).AddAll(types);
+        }
+
+        public Aspect Any(params Type[] types)
+        {
+            return new Aspect(mapper).AddAny(types);
+        }
+    }
+
+    public class Aspect
+    {
+        private BigInteger all;
+        private BigInteger any;
+        private readonly ComponentTypesToBigIntegerMapper mapper;
+
+        internal Aspect(ComponentTypesToBigIntegerMapper mapper)
+        {
+            all = new BigInteger();
+            any = new BigInteger();
+            this.mapper = mapper;
         }
 
         public Aspect AddAll(params Type[] types)
         {
-            for (int i = 0; i < types.Length; i++)
-            {
-                all.Add(types[i]);
-            }
-
+            all &= mapper.TypesToBigInteger(types);
             return this;
-        }
-
-        public static Aspect All(params Type[] types)
-        {
-            return new Aspect().AddAll(types);
         }
 
         public Aspect AddAny(params Type[] types)
         {
-            for (int i = 0; i < types.Length; i++)
-            {
-                any.Add(types[i]);
-            }
-
+            any |= mapper.TypesToBigInteger(types);
             return this;
         }
 
-        public static Aspect Any(params Type[] types)
+        public bool Interested(BigInteger bi)
         {
-            return new Aspect().AddAny(types);
-        }
-
-        public bool Interested(IEnumerable<Type> other)
-        {
-            bool allSuccess = all.IsSubsetOf(other);
-            bool anySuccess = any.Count == 0 || any.Overlaps(other);
-
-            return
-                allSuccess &&
-                anySuccess;
+            return (all & bi) == all && 
+                   (any & bi) != BigInteger.Zero;
         }
     }
 }

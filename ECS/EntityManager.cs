@@ -10,23 +10,19 @@ namespace ECS
 {
     internal class EntityManager : IEntityUtility
     {
-        private long currentEntityId = long.MinValue;
+        private int nextEntityId = 0;
+        private int nextResizeId = 0;
 
-        //internal HashSet<Entity> entities = new HashSet<Entity>();
-        internal Dictionary<long, Entity> entities = new Dictionary<long, Entity>();
-
-        private ConcurrentBag<Entity> toAddEntity = new ConcurrentBag<Entity>();
-        private ConcurrentBag<Entity> toRemoveEntity = new ConcurrentBag<Entity>();
+        private Dictionary<Type, IComponent[]> components;
 
         internal EntityManager()
         {
-            
+            components = new Dictionary<Type, IComponent[]>();
         }
 
         public Entity CreateEntity()
         {
             var entity = new Entity(this);
-            entity.Id = Interlocked.Increment(ref currentEntityId);
             toAddEntity.Add(entity);
             return entity;
         }
@@ -34,6 +30,23 @@ namespace ECS
         public void RemoveEntity(Entity entity)
         {
             toRemoveEntity.Add(entity);
+        }
+
+        public void AddComponent<T>(Entity entity, T component) where T : IComponent
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveComponent<T>(Entity entity, T component) where T : IComponent
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<IComponent> GetComponents(Entity entity)
+        {
+            return components.Values
+                .Select(arr => arr[entity.Id])
+                .Where(c => c != null);
         }
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
