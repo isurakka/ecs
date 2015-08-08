@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,35 +12,76 @@ namespace ECS
     internal class EntityManager : IEntityUtility
     {
         private int nextEntityId = 0;
-        private int nextResizeId = 0;
+        private int componentArraySize = 0;
+
+        private ComponentTypesToBigIntegerMapper mapper;
 
         private Dictionary<Type, IComponent[]> components;
+        private BigInteger[] entityComponentBits;
+
+        private HashSet<int> entitiesToBeRemoved;
 
         internal EntityManager()
         {
+            mapper = new ComponentTypesToBigIntegerMapper();
             components = new Dictionary<Type, IComponent[]>();
+            entityComponentBits = new BigInteger[0];
+            entitiesToBeRemoved = new HashSet<int>();
         }
 
         public Entity CreateEntity()
         {
-            var entity = new Entity(this);
-            toAddEntity.Add(entity);
+            var entity = new Entity(nextEntityId++, this);
+
+            if (componentArraySize < nextEntityId)
+            {
+                componentArraySize = componentArraySize > 0 ? componentArraySize * 2 : 1;
+                foreach (var key in components.Keys)
+                {
+                    var value = components[key];
+                    Array.Resize(ref value, componentArraySize);
+                }
+
+                Array.Resize(ref entityComponentBits, componentArraySize);
+            }
+
             return entity;
         }
 
         public void RemoveEntity(Entity entity)
         {
-            toRemoveEntity.Add(entity);
+            entitiesToBeRemoved.Add(entity.Id);
         }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            throw new NotImplementedException();
+            if (!components.ContainsKey(typeof(T)))
+            {
+                components.Add(typeof(T), new IComponent[componentArraySize]);
+            }
+            // only check this if this wasn't first component of this type to be added
+            else if (components[typeof(T)][entity.Id] != null)
+            {
+                throw new InvalidOperationException(
+                    $@"Entity of type {typeof(T).Name} is already 
+added to entity with {nameof(entity.Id)} {entity.Id}");
+            }
+
+            components[typeof(T)][entity.Id] = component;
+            entityComponentBits[entity.Id] &= mapper.TypesToBigInteger(typeof(T));
         }
 
-        public void RemoveComponent<T>(Entity entity, T component) where T : IComponent
+
+        public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            throw new NotImplementedException();
+            components[typeof(T)][entity.Id] = null;
+            entityComponentBits[entity.Id] &= ~mapper.TypesToBigInteger(typeof(T));
+        }
+
+        public void RemoveComponent(Entity entity, IComponent component)
+        {
+            components[component.GetType()][entity.Id] = null;
+            entityComponentBits[entity.Id] &= ~mapper.TypesToBigInteger(component.GetType());
         }
 
         public IEnumerable<IComponent> GetComponents(Entity entity)
@@ -51,33 +93,19 @@ namespace ECS
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
-            foreach (var pair in entities)
+            for (int i = 0; i < componentArraySize; i++)
             {
-                var entity = pair.Value;
-                if (aspect.Interested(entity.ComponentSet.Keys))
+                if (entityComponentBits[i] != BigInteger.Zero && 
+                    aspect.Interested(entityComponentBits[i]))
                 {
-                    yield return entity;
+                    yield return new Entity(i, this);
                 }
             }
         }
 
-        internal void ProcessQueues()
+        internal void FlushPending()
         {
-            Entity entity;
-
-            while (toRemoveEntity.TryTake(out entity))
-            {
-                if (!entities.Remove(entity.Id))
-                {
-                    throw new InvalidOperationException("No such is added so it can't be removed.");
-                }
-            }
-
-            while (toAddEntity.TryTake(out entity))
-            {
-                entities.Add(entity.Id, entity);
-                //throw new InvalidOperationException("Could not add the specified entity because it is already added.");
-            }
+            throw new NotImplementedException();
         }
     }
 }

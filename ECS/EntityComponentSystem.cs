@@ -24,14 +24,14 @@ namespace ECS
             return entityManager.CreateEntity();
         }
 
-        public void AddSystem(System system, int priority = 0)
+        public void AddSystem(System system, int layer = 0)
         {
-            systemManager.AddSystem(system, priority);
+            systemManager.AddSystem(system, layer);
         }
 
-        public void RemoveSystem(System system, int priority)
+        public void RemoveSystem(System system, int layer)
         {
-            systemManager.RemoveSystem(system, priority);
+            systemManager.RemoveSystem(system, layer);
         }
 
         // TODO: Is this needed and is this right place for this method?
@@ -40,35 +40,31 @@ namespace ECS
             return entityManager.GetEntitiesForAspect(aspect);
         }
 
-        public Entity GetEntity(long id)
-        {
-            return entityManager.entities[id];
-        }
-
         public void Update(float deltaTime)
         {
-            // Add and remove systems before each update
-            systemManager.ProcessQueues();
+            systemManager.FlushPendingChanges();
 
             bool anySystems = false;
 
-            foreach (var systems in systemManager.SystemsByPriority())
+            foreach (var systems in systemManager.GetSystemsInLayerOrder())
             {
                 anySystems |= true;
 
-                // Add and remove entities before each system priority
-                entityManager.ProcessQueues();
+                // Add and remove entities before each system layer
+                entityManager.FlushPending();
 
                 foreach (var system in systems)
                 {
                     system.Update(deltaTime);
                 }
+
+                systemManager.FlushPendingChanges();
             }
 
-            // If there are no systems, still add and remove them
+            // If there are no systems, still add and remove entities
             if (!anySystems)
             {
-                entityManager.ProcessQueues();
+                entityManager.FlushPending();
             }
         }
     }

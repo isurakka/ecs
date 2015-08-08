@@ -17,7 +17,7 @@ namespace ECS
         {
             get
             {
-                return ComponentSet.Values.AsEnumerable();
+                return EntityUtility.GetComponents(this);
             }
         }
 
@@ -33,33 +33,17 @@ namespace ECS
 
         public void AddComponent<T>(T component) where T : IComponent
         {
-            var success = ComponentSet.TryAdd(component.GetType(), component);
-            if (!success)
-            {
-                throw new InvalidOperationException("Entity already contains a component of the specified type");
-            }
+            EntityUtility.AddComponent(this, component);
         }
 
         public void RemoveComponent<T>(T component) where T: IComponent
         {
-            IComponent removed;
-            var success = ComponentSet.TryRemove(component.GetType(), out removed);
-            if (!success)
-            {
-                throw new InvalidOperationException("Could not remove the specified component " + component +
-                        " because the entity doesn't have it.");
-            }
+            EntityUtility.RemoveComponent(this, component);
         }
 
         public void RemoveComponent<T>() where T: IComponent
         {
-            IComponent removed;
-            var success = ComponentSet.TryRemove(typeof(T), out removed);
-            if (!success)
-            {
-                throw new InvalidOperationException("Could not remove the component of specified type " + typeof(T) +
-                        " because the entity doesn't have it.");
-            }
+            EntityUtility.RemoveComponent<T>(this);
         }
 
         public bool HasComponent<T>() where T: IComponent
@@ -94,10 +78,7 @@ namespace ECS
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                return Id.GetHashCode();
-            }
+            return Id.GetHashCode();
         }  
     }
 }
