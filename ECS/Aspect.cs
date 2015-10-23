@@ -1,6 +1,8 @@
 ﻿using ECS;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -8,55 +10,60 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class AspectFactory
-    {
-        private ComponentTypesToBigIntegerMapper mapper;
-
-        internal AspectFactory(ComponentTypesToBigIntegerMapper mapper)
-        {
-            this.mapper = mapper;
-        }
-
-        public Aspect All(params Type[] types)
-        {
-            return new Aspect(mapper).AddAll(types);
-        }
-
-        public Aspect Any(params Type[] types)
-        {
-            return new Aspect(mapper).AddAny(types);
-        }
-    }
-
     public class Aspect
     {
-        private BigInteger all;
-        private BigInteger any;
-        private readonly ComponentTypesToBigIntegerMapper mapper;
+        private readonly ImmutableHashSet<Type> all;
+        private readonly ImmutableHashSet<Type> any;
 
-        internal Aspect(ComponentTypesToBigIntegerMapper mapper)
+        internal Aspect(ImmutableHashSet<Type> all, ImmutableHashSet<Type> any)
         {
-            all = new BigInteger();
-            any = new BigInteger();
-            this.mapper = mapper;
+            this.all = all;
+            this.any = any;
         }
 
-        public Aspect AddAll(params Type[] types)
+        public static Aspect Empty()
         {
-            all &= mapper.TypesToBigInteger(types);
-            return this;
+            return new Aspect(
+                ImmutableHashSet<Type>.Empty,
+                ImmutableHashSet<Type>.Empty);
         }
 
-        public Aspect AddAny(params Type[] types)
+        public static Aspect All(params Type[] types)
         {
-            any |= mapper.TypesToBigInteger(types);
-            return this;
+            return new Aspect(
+                ImmutableHashSet.Create(types), 
+                ImmutableHashSet<Type>.Empty);
         }
 
-        public bool Interested(BigInteger bi)
+        public Aspect AndWithAll(params Type[] types)
         {
-            return (all & bi) == all && 
-                   (any & bi) != BigInteger.Zero;
+            return new Aspect(
+                all.Union(types),
+                any);
+        }
+
+        public static Aspect Any(params Type[] types)
+        {
+            return new Aspect(
+                ImmutableHashSet<Type>.Empty,
+                ImmutableHashSet.Create(types));
+        }
+
+        public Aspect AndWithAny(params Type[] types)
+        {
+            return new Aspect(
+                all,
+                any.Union(types));
+        }
+
+        // TODO: Is this dumb?
+        public bool InterestedInMappedValue(ComponentTypesToBigIntegerMapper mapper, BigInteger bi)
+        {
+            var allBi = mapper.TypesToBigInteger(all);
+            var anyBi = mapper.TypesToBigInteger(any);
+
+            return (allBi & bi) == allBi && 
+                   (anyBi & bi) != BigInteger.Zero;
         }
     }
 }

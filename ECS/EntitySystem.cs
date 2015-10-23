@@ -11,14 +11,32 @@ namespace ECS
         internal IEnumerable<Entity> LastInterested = new List<Entity>();
         internal readonly Aspect Aspect;
 
-        public EntitySystem(Aspect aspect)
-            : base()
+        protected EntitySystem(Aspect aspect)
         {
-            this.Aspect = aspect;
+            Aspect = aspect;
         }
 
+        internal override void SystemRemovedInternal()
+        {
+            foreach (var item in LastInterested)
+            {
+                OnRemoved(item);
+            }
+
+            LastInterested = new List<Entity>();
+
+            base.SystemRemovedInternal();
+        }
+
+        /// <summary>
+        /// Called before each update, before preprocessing. 
+        /// Even if no entities get processed
+        /// </summary>
         protected virtual void Begin() { }
 
+        /// <summary>
+        /// Called after each update
+        /// </summary>
         protected virtual void End() { }
 
         protected virtual void OnAdded(Entity entity) { }
@@ -27,10 +45,11 @@ namespace ECS
 
         internal sealed override void Update(float deltaTime)
         {
-            var entities = Context.FindEntities(Aspect);
+            var entities = Context.FindEntities(Aspect).ToList();
 
             // Check for added and removed entities and call the respective methods for them
             // TODO: There is probably more efficient way to check for added and removed entities
+            // TODO: Check only if entity has changed
             var added = entities.Except(LastInterested);
             var removed = LastInterested.Except(entities);
 
@@ -44,7 +63,7 @@ namespace ECS
                 OnAdded(addedEntity);
             }
 
-            LastInterested = entities.ToList();
+            LastInterested = entities;
 
             // Start of actual processing
             // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)

@@ -17,36 +17,21 @@ namespace ECS
 
         internal EntityComponentSystem context;
 
-        internal SortedDictionary<int, List<System>> systems = new SortedDictionary<int, List<System>>();
+        internal SortedDictionary<int, List<System>> systems;
 
-        private Dictionary<int, List<Tuple<Change, System>>> systemsToChange = new Dictionary<int, List<Tuple<Change, System>>>();
+        private readonly Dictionary<int, List<Tuple<Change, System>>> systemsToChange;
 
         internal SystemManager()
         {
-
+            systems = new SortedDictionary<int, List<System>>();
+            systemsToChange = new Dictionary<int, List<Tuple<Change, System>>>();
         }
 
-        private List<Tuple<Change, System>> GetOrAddChangeList(int layer)
-        {
-            List<Tuple<Change, System>> value;
-            if (!systemsToChange.TryGetValue(layer, out value))
-            {
-                value = new List<Tuple<Change, System>>();
-                systemsToChange.Add(layer, value);
-            }
-
-            return value;
-        }
-
-        internal void AddSystem(System system, int layer)
-        {
+        internal void AddSystem(System system, int layer) => 
             systemsToChange.GetOrAddNew(layer).Add(Tuple.Create(Change.Add, system));
-        }
 
-        internal void RemoveSystem(System system, int layer)
-        {
+        internal void RemoveSystem(System system, int layer) => 
             systemsToChange.GetOrAddNew(layer).Add(Tuple.Create(Change.Remove, system));
-        }
 
         internal void FlushPendingChanges()
         {
@@ -59,10 +44,12 @@ namespace ECS
                 {
                     if (tuple.Item1 == Change.Add)
                     {
+                        tuple.Item2.Context = context;
                         systems.GetOrAddNew(layer).Add(tuple.Item2);
                     }
                     else
                     {
+                        tuple.Item2.Context = null;
                         var system = systems[layer];
                         system.Remove(tuple.Item2);
                         if (system.Count <= 0)
@@ -76,10 +63,7 @@ namespace ECS
             systemsToChange.Clear();
         }
 
-        internal IEnumerable<System> GetSystems(int layer)
-        {
-            return systems[layer];
-        }
+        internal IEnumerable<System> GetSystems(int layer) => systems[layer];
 
         internal KeyValuePair<int, List<System>>? NextSystemsInclusive(int layer)
         {
@@ -94,16 +78,15 @@ namespace ECS
             do
             {
                 nextSystems = NextSystemsInclusive(nextKey);
-                if (nextSystems != null)
-                {
-                    yield return nextSystems.Value.Value;
+                if (nextSystems == null) continue;
 
-                    if (nextKey == int.MaxValue)
-                    {
-                        yield break;
-                    }
-                    nextKey = nextSystems.Value.Key + 1;
+                yield return nextSystems.Value.Value;
+
+                if (nextKey == int.MaxValue)
+                {
+                    yield break;
                 }
+                nextKey = nextSystems.Value.Key + 1;
             } while (nextSystems != null);
         }
     }

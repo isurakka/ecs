@@ -8,28 +8,17 @@ namespace ECS
 {
     public abstract class System
     {
-        private EntityComponentSystem context;
-        protected internal EntityComponentSystem Context
-        {
-            get
-            {
-                return context;
-            }
-            internal set
-            {
-                context = value;
-            }
-        }
+        protected internal EntityComponentSystem Context { get; internal set; }
 
-        public System()
-        {
-            
-        }
+        internal virtual void SystemAddedInternal() => SystemAdded();
 
-        internal virtual void Update(float deltaTime)
-        {
-            Process(deltaTime);
-        }
+        protected virtual void SystemAdded() {  }
+
+        internal virtual void SystemRemovedInternal() => SystemRemoved();
+
+        protected virtual void SystemRemoved() {  }
+
+        internal virtual void Update(float deltaTime) => Process(deltaTime);
 
         protected abstract void Process(float deltaTime);
     }

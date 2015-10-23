@@ -7,13 +7,21 @@ using ECS;
 using Xunit;
 namespace ECS.Tests
 {
-    public class AspectTests
+    public class AspectTests : IClassFixture<ComponentTypesToBigIntegerMapper>
     {
+        private readonly ComponentTypesToBigIntegerMapper mapper;
+
+        public AspectTests(ComponentTypesToBigIntegerMapper mapper)
+        {
+            this.mapper = mapper;
+        }
+        
         [Fact()]
         public void EmptyTest()
         {
             var asp1 = Aspect.Empty();
-            Assert.True(asp1.Interested(new List<Type>()));
+            
+            Assert.True(asp1.Interested(mapper, BigInteger.Zero));
             Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
             Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
         }

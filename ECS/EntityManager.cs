@@ -11,15 +11,18 @@ namespace ECS
 {
     internal class EntityManager : IEntityUtility
     {
-        private int nextEntityId = 0;
-        private int componentArraySize = 0;
+        private int nextEntityId;
+        private int componentArraySize;
 
-        private ComponentTypesToBigIntegerMapper mapper;
+        private readonly ComponentTypesToBigIntegerMapper mapper;
 
-        private Dictionary<Type, IComponent[]> components;
+        // key = component type, value = array of components where key is entity id
+        private readonly Dictionary<Type, IComponent[]> components;
+
+        // array of component bitsets where key is entity id
         private BigInteger[] entityComponentBits;
 
-        private HashSet<int> entitiesToBeRemoved;
+        private readonly HashSet<int> entitiesToBeRemoved;
 
         internal EntityManager()
         {
@@ -48,10 +51,8 @@ namespace ECS
             return entity;
         }
 
-        public void RemoveEntity(Entity entity)
-        {
+        public void RemoveEntity(Entity entity) => 
             entitiesToBeRemoved.Add(entity.Id);
-        }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
@@ -63,8 +64,8 @@ namespace ECS
             else if (components[typeof(T)][entity.Id] != null)
             {
                 throw new InvalidOperationException(
-                    $@"Entity of type {typeof(T).Name} is already 
-added to entity with {nameof(entity.Id)} {entity.Id}");
+                    $@"Entity of type {typeof(T).Name} is already " + 
+                    $"added to entity with {nameof(entity.Id)} {entity.Id}");
             }
 
             components[typeof(T)][entity.Id] = component;
@@ -91,12 +92,33 @@ added to entity with {nameof(entity.Id)} {entity.Id}");
                 .Where(c => c != null);
         }
 
+        public T GetComponent<T>(Entity entity) where T: IComponent
+        {
+            if (!components.ContainsKey(typeof(T))) return default(T);
+
+            return (T)components[typeof(T)][entity.Id];
+        }
+
+        public bool HasComponent<T>(Entity entity) where T : IComponent
+        {
+            if (!components.ContainsKey(typeof(T))) return false;
+
+            return components[typeof(T)][entity.Id] != null;
+        }
+
+        public bool HasComponent(Entity entity, IComponent component)
+        {
+            if (!components.ContainsKey(component.GetType())) return false;
+
+            return components[component.GetType()][entity.Id] != null;
+        }
+
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
             for (int i = 0; i < componentArraySize; i++)
             {
                 if (entityComponentBits[i] != BigInteger.Zero && 
-                    aspect.Interested(entityComponentBits[i]))
+                    aspect.InterestedInMappedValue(mapper, entityComponentBits[i]))
                 {
                     yield return new Entity(i, this);
                 }

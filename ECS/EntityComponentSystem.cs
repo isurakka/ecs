@@ -8,47 +8,46 @@ namespace ECS
 {
     public class EntityComponentSystem
     {
-        private EntityManager entityManager;
-        private SystemManager systemManager;
+        private readonly EntityManager entityManager;
+        private readonly SystemManager systemManager;
+
+        private static readonly bool running64Bit;
+
+        static EntityComponentSystem()
+        {
+            running64Bit = Environment.Is64BitProcess;
+        }
 
         public EntityComponentSystem()
         {
             entityManager = new EntityManager();
-
-            systemManager = new SystemManager();
-            systemManager.context = this;
+            systemManager = new SystemManager { context = this };
         }
 
-        public Entity CreateEntity()
-        {
-            return entityManager.CreateEntity();
-        }
+        public Entity CreateEntity() => entityManager.CreateEntity();
 
-        public void AddSystem(System system, int layer = 0)
-        {
+        public void AddSystem(System system, int layer = 0) => 
             systemManager.AddSystem(system, layer);
-        }
 
-        public void RemoveSystem(System system, int layer)
-        {
+        public void RemoveSystem(System system, int layer) => 
             systemManager.RemoveSystem(system, layer);
-        }
 
         // TODO: Is this needed and is this right place for this method?
-        public IEnumerable<Entity> FindEntities(Aspect aspect)
-        {
-            return entityManager.GetEntitiesForAspect(aspect);
-        }
+        public IEnumerable<Entity> FindEntities(Aspect aspect) => 
+            entityManager.GetEntitiesForAspect(aspect);
 
         public void Update(float deltaTime)
         {
             systemManager.FlushPendingChanges();
 
-            bool anySystems = false;
+            var anySystems = false;
+
+            // 256 MB
+            GC.TryStartNoGCRegion(running64Bit ? 256000000L : 16000000L);
 
             foreach (var systems in systemManager.GetSystemsInLayerOrder())
             {
-                anySystems |= true;
+                anySystems = true;
 
                 // Add and remove entities before each system layer
                 entityManager.FlushPending();
@@ -60,6 +59,8 @@ namespace ECS
 
                 systemManager.FlushPendingChanges();
             }
+
+            GC.EndNoGCRegion();
 
             // If there are no systems, still add and remove entities
             if (!anySystems)

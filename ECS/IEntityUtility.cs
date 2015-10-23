@@ -12,6 +12,9 @@ namespace ECS
         void RemoveComponent<T>(Entity entity) where T : IComponent;
         void RemoveComponent(Entity entity, IComponent component);
         IEnumerable<IComponent> GetComponents(Entity entity);
+        T GetComponent<T>(Entity entity) where T : IComponent;
+        bool HasComponent<T>(Entity entity) where T : IComponent;
+        bool HasComponent(Entity entity, IComponent component);
         void RemoveEntity(Entity entity);
     }
 }
