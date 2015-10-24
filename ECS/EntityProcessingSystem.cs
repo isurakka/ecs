@@ -14,6 +14,12 @@ namespace ECS
 
         }
 
+        public EntityProcessingSystem(params Type[] types)
+            : this(Aspect.All(types))
+        {
+
+        }
+
         protected sealed override void ProcessEntities(IEnumerable<Entity> entities, float deltaTime)
         {
             foreach (var item in entities)
