@@ -171,7 +171,7 @@ namespace ECS
 
         public bool HasComponent<T>(Entity entity) where T : IComponent
         {
-            if (!components.ContainsKey(typeof(T))) return false;
+            if (!components.ContainsKey(typeof(T)) || entity.Id >= componentArraySize) return false;
 
             return components[typeof(T)][entity.Id] != null;
         }

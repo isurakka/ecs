@@ -47,19 +47,6 @@ namespace ECS
             return ret;
         }
 
-        public IEnumerable<Type> BigIntegerToTypes(BigInteger bi)
-        {
-            var ba = new BitArray(bi.ToByteArray());
-            var types = shiftForType.Keys.ToArray();
-            for (int i = 0; i < ba.Length; i++)
-            {
-                if (ba.Get(i))
-                {
-                    yield return types[i];
-                }
-            }
-        } 
-
         protected bool Equals(ComponentTypesToBigIntegerMapper other) => guid.Equals(other.guid);
 
         public override bool Equals(object obj)

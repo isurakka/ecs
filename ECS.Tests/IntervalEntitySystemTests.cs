@@ -47,11 +47,14 @@ namespace ECS.Tests
 
             ecs.Update(1f);
 
+            Assert.Equal(1f, sys.Interval);
             Assert.Equal(2, sys.Processings);
 
             ecs.Update(8f);
 
             Assert.Equal(10, sys.Processings);
+
+            Assert.Equal(1f, sys.Interval);
         }
     }
 }

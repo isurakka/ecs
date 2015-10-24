@@ -21,15 +21,15 @@ namespace ECS.Tests
             this.mapper = mapper;
             none = BigInteger.Zero;
             c1 = mapper.TypesToBigInteger(typeof (TestComponentOne));
-            c2 = mapper.TypesToBigInteger(typeof(TestComponentTwo));
+            c2 = mapper.TypesToBigInteger(typeof (TestComponentTwo));
             c1c2 = mapper.TypesToBigInteger(typeof (TestComponentOne), typeof (TestComponentTwo));
         }
-        
+
         [Fact()]
         public void EmptyTest()
         {
             var asp1 = Aspect.Empty();
-            
+
             Assert.True(asp1.InterestedInMappedValue(mapper, none));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
@@ -38,7 +38,7 @@ namespace ECS.Tests
         [Fact()]
         public void AllTestOne()
         {
-            var asp1 = Aspect.All(typeof(TestComponentOne));
+            var asp1 = Aspect.All(typeof (TestComponentOne));
             Assert.False(asp1.InterestedInMappedValue(mapper, none));
             Assert.False(asp1.InterestedInMappedValue(mapper, c2));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1));
@@ -48,7 +48,7 @@ namespace ECS.Tests
         [Fact()]
         public void AllTestTwo()
         {
-            var asp1 = Aspect.All(typeof(TestComponentOne), typeof(TestComponentTwo));
+            var asp1 = Aspect.All(typeof (TestComponentOne), typeof (TestComponentTwo));
             Assert.False(asp1.InterestedInMappedValue(mapper, none));
             Assert.False(asp1.InterestedInMappedValue(mapper, c1));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
@@ -57,7 +57,7 @@ namespace ECS.Tests
         [Fact()]
         public void AnyTestOne()
         {
-            var asp1 = Aspect.Any(typeof(TestComponentOne));
+            var asp1 = Aspect.Any(typeof (TestComponentOne));
             Assert.False(asp1.InterestedInMappedValue(mapper, none));
             Assert.False(asp1.InterestedInMappedValue(mapper, c2));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1));
@@ -67,11 +67,20 @@ namespace ECS.Tests
         [Fact()]
         public void AnyTestTwo()
         {
-            var asp1 = Aspect.Any(typeof(TestComponentOne), typeof(TestComponentTwo));
+            var asp1 = Aspect.Any(typeof (TestComponentOne), typeof (TestComponentTwo));
             Assert.False(asp1.InterestedInMappedValue(mapper, none));
             Assert.True(asp1.InterestedInMappedValue(mapper, c2));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1));
             Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+        }
+
+        [Fact()]
+        public void MapperTest()
+        {
+            var mapper2 = new ComponentTypesToBigIntegerMapper();
+            Assert.NotEqual(mapper, mapper2);
+            Assert.True(mapper != mapper2);
+            Assert.False(mapper == mapper2);
         }
     }
 }

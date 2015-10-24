@@ -71,7 +71,7 @@ namespace ECS.Tests
         }
 
         [Fact()]
-        public void HasComponentTest()
+        public void HasComponentSmall()
         {
             var ent = ecs.CreateEntity();
             var tc = new TestComponentOne();
@@ -111,6 +111,59 @@ namespace ECS.Tests
 
             ent.Remove();
             ecs.Update(1f);
+        }
+
+        [Fact()]
+        public void GetComponents()
+        {
+            var ent = ecs.CreateEntity();
+            var tc1 = new TestComponentOne();
+            var tc2 = new TestComponentTwo();
+
+            ecs.Update(1f);
+            Assert.Empty(ent.Components);
+
+            ent.AddComponent(tc1);
+            ecs.Update(1f);
+            Assert.Equal(tc1, ent.Components.ElementAt(0));
+
+            ent.AddComponent(tc2);
+            ecs.FlushChanges();
+            Assert.Equal(tc1, ent.Components.ElementAt(0));
+            Assert.Equal(tc2, ent.Components.ElementAt(1));
+
+            ent.Remove();
+            ecs.Update(1f);
+
+            Assert.Empty(ent.Components);
+        }
+
+        [Fact()]
+        public void HasComponentBig()
+        {
+            var ent = ecs.CreateEntity();
+            var tc = new TestComponentOne();
+
+            ecs.Update(1f);
+
+            Assert.False(ent.HasComponent<TestComponentOne>());
+            Assert.False(ent.HasComponent(tc));
+
+            ent.AddComponent(tc);
+
+            Assert.False(ent.HasComponent<TestComponentOne>());
+            Assert.False(ent.HasComponent(tc));
+
+            ecs.FlushChanges();
+
+            Assert.True(ent.HasComponent<TestComponentOne>());
+            Assert.True(ent.HasComponent(tc));
+
+            ent.Remove();
+            ecs.Update(1f);
+
+            Assert.False(ent.HasComponent<TestComponentOne>());
+            Assert.False(ent.HasComponent(tc));
         }
 
         [Fact()]
