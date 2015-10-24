@@ -67,7 +67,16 @@ namespace ECS
             systemsToChange.Clear();
         }
 
-        internal IEnumerable<System> GetSystems(int layer) => systems[layer];
+        internal IEnumerable<System> GetSystems(int layer)
+        {
+            List<System> ret;
+            if (!systems.TryGetValue(layer, out ret))
+            {
+                return Enumerable.Empty<System>();
+            }
+
+            return ret;
+        }
 
         internal KeyValuePair<int, List<System>>? NextSystemsInclusive(int layer)
         {
