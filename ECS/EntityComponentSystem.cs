@@ -36,6 +36,11 @@ namespace ECS
         public IEnumerable<Entity> FindEntities(Aspect aspect) => 
             entityManager.GetEntitiesForAspect(aspect);
 
+        public Entity GetEntity(int id)
+        {
+            return new Entity(id, entityManager);
+        }
+
         public void Update(float deltaTime)
         {
             FlushChanges();
