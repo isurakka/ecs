@@ -53,6 +53,27 @@ namespace ECS
 
         public override bool Equals(object obj) => Equals(obj as Entity);
 
+        public static bool operator ==(Entity e1, Entity e2)
+        {
+            if (ReferenceEquals(e1, e2))
+            {
+                return true;
+            }
+
+            // If one is null, but not both, return false.
+            if (((object)e1 == null) || ((object)e2 == null))
+            {
+                return false;
+            }
+
+            return e1.Equals(e2);
+        }
+
+        public static bool operator !=(Entity e1, Entity e2)
+        {
+            return !(e1 == e2);
+        }
+
         public override int GetHashCode() => Id.GetHashCode();
     }
 }

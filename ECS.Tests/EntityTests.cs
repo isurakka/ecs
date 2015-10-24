@@ -79,10 +79,12 @@ namespace ECS.Tests
             Assert.False(ent.HasComponent<TestComponentOne>());
 
             ent.AddComponent(tc);
+            ecs.FlushChanges();
 
             Assert.True(ent.HasComponent<TestComponentOne>());
 
             ent.RemoveComponent(tc);
+            ecs.FlushChanges();
 
             Assert.False(ent.HasComponent<TestComponentOne>());
 
@@ -102,6 +104,8 @@ namespace ECS.Tests
             Assert.Equal(null, ent.GetComponent<TestComponentOne>());
 
             ent.AddComponent(tc);
+
+            ecs.FlushChanges();
 
             Assert.Equal(tc, ent.GetComponent<TestComponentOne>());
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace ECS
             var ret = BigInteger.Zero;
             foreach (var type in types)
             {
-                Debug.Assert(type == typeof(IComponent),
+                Debug.Assert(typeof(IComponent).IsAssignableFrom(type),
                     $"{nameof(ComponentTypesToBigIntegerMapper)} should only be used with {nameof(IComponent)} types");
 
                 int shift;
@@ -45,6 +46,19 @@ namespace ECS
             }
             return ret;
         }
+
+        public IEnumerable<Type> BigIntegerToTypes(BigInteger bi)
+        {
+            var ba = new BitArray(bi.ToByteArray());
+            var types = shiftForType.Keys.ToArray();
+            for (int i = 0; i < ba.Length; i++)
+            {
+                if (ba.Get(i))
+                {
+                    yield return types[i];
+                }
+            }
+        } 
 
         protected bool Equals(ComponentTypesToBigIntegerMapper other) => guid.Equals(other.guid);
 

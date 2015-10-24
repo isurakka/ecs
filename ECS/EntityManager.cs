@@ -20,69 +20,139 @@ namespace ECS
         private readonly Dictionary<Type, IComponent[]> components;
 
         // array of component bitsets where key is entity id
-        private BigInteger[] entityComponentBits;
+        // null means that entity doesn't exist
+        private BigInteger?[] entityComponentBits;
 
-        private readonly HashSet<int> entitiesToBeRemoved;
+        // key = entity id, value 1 = component type, value 2 = component instance
+        private readonly Queue<Tuple<int, Type, IComponent>> pendingComponentAdds;
+
+        // key = entity id, value = component type
+        private readonly Queue<Tuple<int, Type>> pendingComponentRemovals;
+
+        private readonly Queue<Entity> pendingEntityAdds;
+
+        // key = entity id
+        private readonly Queue<int> pendingEntityRemovals;
+
+        private readonly Queue<EntityChange> pendingChangeOrder;  
+
+        private enum EntityChange
+        {
+            AddEntity,
+            RemoveEntity,
+            AddComponent,
+            RemoveComponent,
+        }
 
         internal EntityManager()
         {
             mapper = new ComponentTypesToBigIntegerMapper();
             components = new Dictionary<Type, IComponent[]>();
-            entityComponentBits = new BigInteger[0];
-            entitiesToBeRemoved = new HashSet<int>();
+            entityComponentBits = new BigInteger?[0];
+
+            pendingComponentAdds = new Queue<Tuple<int, Type, IComponent>>();
+            pendingComponentRemovals = new Queue<Tuple<int, Type>>();
+            pendingEntityAdds = new Queue<Entity>();
+            pendingEntityRemovals = new Queue<int>();
+            pendingChangeOrder = new Queue<EntityChange>();
         }
 
         public Entity CreateEntity()
         {
             var entity = new Entity(nextEntityId++, this);
+            pendingEntityAdds.Enqueue(entity);
+            pendingChangeOrder.Enqueue(EntityChange.AddEntity);
+            return entity;
+        }
 
+        internal void FlushEntityAddOnce()
+        {
             if (componentArraySize < nextEntityId)
             {
                 componentArraySize = componentArraySize > 0 ? componentArraySize * 2 : 1;
-                foreach (var key in components.Keys)
+                foreach (var key in components.Keys.ToArray())
                 {
                     var value = components[key];
                     Array.Resize(ref value, componentArraySize);
+                    components[key] = value;
                 }
 
                 Array.Resize(ref entityComponentBits, componentArraySize);
             }
 
-            return entity;
+            var entity = pendingEntityAdds.Dequeue();
+            entityComponentBits[entity.Id] = BigInteger.Zero;
         }
 
-        public void RemoveEntity(Entity entity) => 
-            entitiesToBeRemoved.Add(entity.Id);
+        public void RemoveEntity(Entity entity)
+        {
+            foreach (var component in GetComponents(entity))
+            {
+                RemoveComponent(entity, component);
+            }
+
+            pendingEntityRemovals.Enqueue(entity.Id);
+            pendingChangeOrder.Enqueue(EntityChange.RemoveEntity);
+        } 
+
+        internal void FlushEntityRemovalOnce()
+        {
+            var id = pendingEntityRemovals.Dequeue();
+            foreach (var pair in components)
+            {
+                pair.Value[id] = null;
+            }
+            entityComponentBits[id] = null;
+        }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            if (!components.ContainsKey(typeof(T)))
-            {
-                components.Add(typeof(T), new IComponent[componentArraySize]);
-            }
-            // only check this if this wasn't first component of this type to be added
-            else if (components[typeof(T)][entity.Id] != null)
-            {
-                throw new InvalidOperationException(
-                    $@"Entity of type {typeof(T).Name} is already " + 
-                    $"added to entity with {nameof(entity.Id)} {entity.Id}");
-            }
-
-            components[typeof(T)][entity.Id] = component;
-            entityComponentBits[entity.Id] &= mapper.TypesToBigInteger(typeof(T));
+            pendingComponentAdds.Enqueue(Tuple.Create(entity.Id, typeof(T), (IComponent)component));
+            pendingChangeOrder.Enqueue(EntityChange.AddComponent);
         }
 
+        internal void FlushComponentAddOnce()
+        {
+            var tuple = pendingComponentAdds.Dequeue();
+            var id = tuple.Item1;
+            var type = tuple.Item2;
+            var component = tuple.Item3;
+
+            if (!components.ContainsKey(type))
+            {
+                components.Add(type, new IComponent[componentArraySize]);
+            }
+            // only check this if this wasn't first component of this type to be added
+            else if (components[type][id] != null)
+            {
+                throw new InvalidOperationException(
+                    $@"Entity of type {type.Name} is already " +
+                    $"added to entity with {nameof(id)} {id}");
+            }
+
+            components[type][id] = component;
+            entityComponentBits[id] |= mapper.TypesToBigInteger(type);
+        }
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            components[typeof(T)][entity.Id] = null;
-            entityComponentBits[entity.Id] &= ~mapper.TypesToBigInteger(typeof(T));
+            pendingComponentRemovals.Enqueue(Tuple.Create(entity.Id, typeof(T)));
+            pendingChangeOrder.Enqueue(EntityChange.RemoveComponent);
         }
 
         public void RemoveComponent(Entity entity, IComponent component)
         {
-            components[component.GetType()][entity.Id] = null;
-            entityComponentBits[entity.Id] &= ~mapper.TypesToBigInteger(component.GetType());
+            pendingComponentRemovals.Enqueue(Tuple.Create(entity.Id, component.GetType()));
+            pendingChangeOrder.Enqueue(EntityChange.RemoveComponent);
+        }
+
+        internal void FlushComponentRemovalOnce()
+        {
+            var tuple = pendingComponentRemovals.Dequeue();
+            var id = tuple.Item1;
+            var type = tuple.Item2;
+            components[type][id] = null;
+            entityComponentBits[id] &= ~mapper.TypesToBigInteger(type);
         }
 
         public IEnumerable<IComponent> GetComponents(Entity entity)
@@ -117,8 +187,8 @@ namespace ECS
         {
             for (int i = 0; i < componentArraySize; i++)
             {
-                if (entityComponentBits[i] != BigInteger.Zero && 
-                    aspect.InterestedInMappedValue(mapper, entityComponentBits[i]))
+                if (entityComponentBits[i] != null && 
+                    aspect.InterestedInMappedValue(mapper, entityComponentBits[i].Value))
                 {
                     yield return new Entity(i, this);
                 }
@@ -127,7 +197,27 @@ namespace ECS
 
         internal void FlushPending()
         {
-            throw new NotImplementedException();
+            while (pendingChangeOrder.Any())
+            {
+                var change = pendingChangeOrder.Dequeue();
+                switch (change)
+                {
+                    case EntityChange.AddEntity:
+                        FlushEntityAddOnce();
+                        break;
+                    case EntityChange.RemoveEntity:
+                        FlushEntityRemovalOnce();
+                        break;
+                    case EntityChange.AddComponent:
+                        FlushComponentAddOnce();
+                        break;
+                    case EntityChange.RemoveComponent:
+                        FlushComponentRemovalOnce();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
         }
     }
 }

@@ -38,35 +38,31 @@ namespace ECS
 
         public void Update(float deltaTime)
         {
+            entityManager.FlushPending();
             systemManager.FlushPendingChanges();
 
-            var anySystems = false;
-
             // 256 MB
-            GC.TryStartNoGCRegion(running64Bit ? 256000000L : 16000000L);
+            var noGc = GC.TryStartNoGCRegion(running64Bit ? 256000000L : 16000000L);
 
             foreach (var systems in systemManager.GetSystemsInLayerOrder())
             {
-                anySystems = true;
-
-                // Add and remove entities before each system layer
-                entityManager.FlushPending();
-
                 foreach (var system in systems)
                 {
                     system.Update(deltaTime);
                 }
 
                 systemManager.FlushPendingChanges();
-            }
-
-            GC.EndNoGCRegion();
-
-            // If there are no systems, still add and remove entities
-            if (!anySystems)
-            {
+                // Add and remove entities before each system layer
                 entityManager.FlushPending();
             }
+
+            if (noGc) GC.EndNoGCRegion();
+        }
+
+        public void FlushChanges()
+        {
+            entityManager.FlushPending();
+            systemManager.FlushPendingChanges();
         }
     }
 }

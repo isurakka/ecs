@@ -63,7 +63,7 @@ namespace ECS
             var anyBi = mapper.TypesToBigInteger(any);
 
             return (allBi & bi) == allBi && 
-                   (anyBi & bi) != BigInteger.Zero;
+                    (anyBi == BigInteger.Zero || (anyBi & bi) != BigInteger.Zero);
         }
     }
 }
