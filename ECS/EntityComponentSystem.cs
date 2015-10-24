@@ -38,8 +38,7 @@ namespace ECS
 
         public void Update(float deltaTime)
         {
-            entityManager.FlushPending();
-            systemManager.FlushPendingChanges();
+            FlushChanges();
 
             // 256 MB
             var noGc = GC.TryStartNoGCRegion(running64Bit ? 256000000L : 16000000L);
@@ -51,12 +50,22 @@ namespace ECS
                     system.Update(deltaTime);
                 }
 
-                systemManager.FlushPendingChanges();
-                // Add and remove entities before each system layer
-                entityManager.FlushPending();
+                FlushChanges();
             }
 
             if (noGc) GC.EndNoGCRegion();
+        }
+
+        public void UpdateSpecific(float deltaTime, int layer)
+        {
+            FlushChanges();
+
+            foreach (var system in systemManager.GetSystems(layer))
+            {
+                system.Update(deltaTime);
+            }
+
+            FlushChanges();
         }
 
         public void FlushChanges()
