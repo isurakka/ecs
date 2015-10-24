@@ -42,17 +42,21 @@ namespace ECS
 
                 foreach (var tuple in value)
                 {
+                    var system = tuple.Item2;
                     if (tuple.Item1 == Change.Add)
                     {
-                        tuple.Item2.Context = context;
-                        systems.GetOrAddNew(layer).Add(tuple.Item2);
+                        system.Context = context;
+                        systems.GetOrAddNew(layer).Add(system);
+                        system.SystemAddedInternal();
                     }
                     else
                     {
-                        tuple.Item2.Context = null;
-                        var system = systems[layer];
-                        system.Remove(tuple.Item2);
-                        if (system.Count <= 0)
+                        system.Context = null;
+                        var systemsInLayer = systems[layer];
+                        systemsInLayer.Remove(system);
+                        system.SystemRemovedInternal();
+
+                        if (systemsInLayer.Count <= 0)
                         {
                             systems.Remove(layer);
                         }

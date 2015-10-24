@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using ECS;
@@ -10,10 +11,18 @@ namespace ECS.Tests
     public class AspectTests : IClassFixture<ComponentTypesToBigIntegerMapper>
     {
         private readonly ComponentTypesToBigIntegerMapper mapper;
+        private readonly BigInteger none;
+        private readonly BigInteger c1;
+        private readonly BigInteger c2;
+        private readonly BigInteger c1c2;
 
         public AspectTests(ComponentTypesToBigIntegerMapper mapper)
         {
             this.mapper = mapper;
+            none = BigInteger.Zero;
+            c1 = mapper.TypesToBigInteger(typeof (TestComponentOne));
+            c2 = mapper.TypesToBigInteger(typeof(TestComponentTwo));
+            c1c2 = mapper.TypesToBigInteger(typeof (TestComponentOne), typeof (TestComponentTwo));
         }
         
         [Fact()]
@@ -21,48 +30,48 @@ namespace ECS.Tests
         {
             var asp1 = Aspect.Empty();
             
-            Assert.True(asp1.Interested(mapper, BigInteger.Zero));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
+            Assert.True(asp1.InterestedInMappedValue(mapper, none));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
         }
 
         [Fact()]
         public void AllTestOne()
         {
             var asp1 = Aspect.All(typeof(TestComponentOne));
-            Assert.False(asp1.Interested(new List<Type>()));
-            Assert.False(asp1.Interested(new List<Type>() { typeof(TestComponentTwo) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
+            Assert.False(asp1.InterestedInMappedValue(mapper, none));
+            Assert.False(asp1.InterestedInMappedValue(mapper, c2));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
         }
 
         [Fact()]
         public void AllTestTwo()
         {
             var asp1 = Aspect.All(typeof(TestComponentOne), typeof(TestComponentTwo));
-            Assert.False(asp1.Interested(new List<Type>()));
-            Assert.False(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
+            Assert.False(asp1.InterestedInMappedValue(mapper, none));
+            Assert.False(asp1.InterestedInMappedValue(mapper, c1));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
         }
 
         [Fact()]
         public void AnyTestOne()
         {
             var asp1 = Aspect.Any(typeof(TestComponentOne));
-            Assert.False(asp1.Interested(new List<Type>()));
-            Assert.False(asp1.Interested(new List<Type>() { typeof(TestComponentTwo) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
+            Assert.False(asp1.InterestedInMappedValue(mapper, none));
+            Assert.False(asp1.InterestedInMappedValue(mapper, c2));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
         }
 
         [Fact()]
         public void AnyTestTwo()
         {
             var asp1 = Aspect.Any(typeof(TestComponentOne), typeof(TestComponentTwo));
-            Assert.False(asp1.Interested(new List<Type>()));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentTwo) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne) }));
-            Assert.True(asp1.Interested(new List<Type>() { typeof(TestComponentOne), typeof(TestComponentTwo) }));
+            Assert.False(asp1.InterestedInMappedValue(mapper, none));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c2));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
+            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
         }
     }
 }
