@@ -30,48 +30,48 @@ namespace ECS.Tests
         {
             var asp1 = Aspect.Empty();
 
-            Assert.True(asp1.InterestedInMappedValue(mapper, none));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+            Assert.True(asp1.Interested(none));
+            Assert.True(asp1.Interested(c1));
+            Assert.True(asp1.Interested(c1c2));
         }
 
         [Fact()]
         public void AllTestOne()
         {
             var asp1 = Aspect.All(typeof (TestComponentOne));
-            Assert.False(asp1.InterestedInMappedValue(mapper, none));
-            Assert.False(asp1.InterestedInMappedValue(mapper, c2));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+            Assert.False(asp1.Interested(none));
+            Assert.False(asp1.Interested(c2));
+            Assert.True(asp1.Interested(c1));
+            Assert.True(asp1.Interested(c1c2));
         }
 
         [Fact()]
         public void AllTestTwo()
         {
             var asp1 = Aspect.All(typeof (TestComponentOne), typeof (TestComponentTwo));
-            Assert.False(asp1.InterestedInMappedValue(mapper, none));
-            Assert.False(asp1.InterestedInMappedValue(mapper, c1));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+            Assert.False(asp1.Interested(none));
+            Assert.False(asp1.Interested(c1));
+            Assert.True(asp1.Interested(c1c2));
         }
 
         [Fact()]
         public void AnyTestOne()
         {
             var asp1 = Aspect.Any(typeof (TestComponentOne));
-            Assert.False(asp1.InterestedInMappedValue(mapper, none));
-            Assert.False(asp1.InterestedInMappedValue(mapper, c2));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+            Assert.False(asp1.Interested(none));
+            Assert.False(asp1.Interested(c2));
+            Assert.True(asp1.Interested(c1));
+            Assert.True(asp1.Interested(c1c2));
         }
 
         [Fact()]
         public void AnyTestTwo()
         {
             var asp1 = Aspect.Any(typeof (TestComponentOne), typeof (TestComponentTwo));
-            Assert.False(asp1.InterestedInMappedValue(mapper, none));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c2));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1));
-            Assert.True(asp1.InterestedInMappedValue(mapper, c1c2));
+            Assert.False(asp1.Interested(none));
+            Assert.True(asp1.Interested(c2));
+            Assert.True(asp1.Interested(c1));
+            Assert.True(asp1.Interested(c1c2));
         }
 
         [Fact()]

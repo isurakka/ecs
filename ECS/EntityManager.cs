@@ -14,14 +14,14 @@ namespace ECS
         private int nextEntityId;
         private int componentArraySize;
 
-        private readonly ComponentTypesToBigIntegerMapper mapper;
-
         // key = component type, value = array of components where key is entity id
         private readonly Dictionary<Type, IComponent[]> components;
 
         // array of component bitsets where key is entity id
         // null means that entity doesn't exist
         private BigInteger?[] entityComponentBits;
+        private Entity[] entityCache;
+        private Dictionary<int, bool>[] entityInterestedCache; 
 
         // key = entity id, value 1 = component type, value 2 = component instance
         private readonly Queue<Tuple<int, Type, IComponent>> pendingComponentAdds;
@@ -46,9 +46,10 @@ namespace ECS
 
         internal EntityManager()
         {
-            mapper = new ComponentTypesToBigIntegerMapper();
             components = new Dictionary<Type, IComponent[]>();
             entityComponentBits = new BigInteger?[0];
+            entityCache = new Entity[0];
+            entityInterestedCache = new Dictionary<int, bool>[0];
 
             pendingComponentAdds = new Queue<Tuple<int, Type, IComponent>>();
             pendingComponentRemovals = new Queue<Tuple<int, Type>>();
@@ -62,6 +63,7 @@ namespace ECS
             var entity = new Entity(nextEntityId++, this);
             pendingEntityAdds.Enqueue(entity);
             pendingChangeOrder.Enqueue(EntityChange.AddEntity);
+            FlushPending();
             return entity;
         }
 
@@ -78,10 +80,18 @@ namespace ECS
                 }
 
                 Array.Resize(ref entityComponentBits, componentArraySize);
+                Array.Resize(ref entityCache, componentArraySize);
+                Array.Resize(ref entityInterestedCache, componentArraySize);
             }
 
             var entity = pendingEntityAdds.Dequeue();
             entityComponentBits[entity.Id] = BigInteger.Zero;
+            entityCache[entity.Id] = new Entity(entity.Id, this);
+
+            if (entityInterestedCache[entity.Id] == null)
+            {
+                entityInterestedCache[entity.Id] = new Dictionary<int, bool>();
+            }
         }
 
         public void RemoveEntity(Entity entity)
@@ -103,12 +113,15 @@ namespace ECS
                 pair.Value[id] = null;
             }
             entityComponentBits[id] = null;
+            entityCache[id] = null;
+            entityInterestedCache[id].Clear();
         }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
             pendingComponentAdds.Enqueue(Tuple.Create(entity.Id, typeof(T), (IComponent)component));
             pendingChangeOrder.Enqueue(EntityChange.AddComponent);
+            FlushPending();
         }
 
         internal void FlushComponentAddOnce()
@@ -131,7 +144,8 @@ namespace ECS
             }
 
             components[type][id] = component;
-            entityComponentBits[id] |= mapper.TypesToBigInteger(type);
+            entityComponentBits[id] |= AspectMapper.TypesToBigInteger(type);
+            entityInterestedCache[id].Clear();
         }
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
@@ -152,7 +166,8 @@ namespace ECS
             var id = tuple.Item1;
             var type = tuple.Item2;
             components[type][id] = null;
-            entityComponentBits[id] &= ~mapper.TypesToBigInteger(type);
+            entityComponentBits[id] &= ~AspectMapper.TypesToBigInteger(type);
+            entityInterestedCache[id].Clear();
         }
 
         public IEnumerable<IComponent> GetComponents(Entity entity)
@@ -185,14 +200,25 @@ namespace ECS
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
+            var ret = new List<Entity>();
             for (int i = 0; i < componentArraySize; i++)
             {
-                if (entityComponentBits[i] != null && 
-                    aspect.InterestedInMappedValue(mapper, entityComponentBits[i].Value))
+                if (entityComponentBits[i] == null) continue;
+
+                var aspectHash = aspect.GetHashCode();
+                bool interested;
+                if (!entityInterestedCache[i].TryGetValue(aspectHash, out interested))
                 {
-                    yield return new Entity(i, this);
+                    interested = aspect.Interested(entityComponentBits[i].Value);
+                    entityInterestedCache[i][aspectHash] = interested;
+                }
+
+                if (interested)
+                {
+                    ret.Add(entityCache[i]);
                 }
             }
+            return ret;
         }
 
         internal void FlushPending()

@@ -10,10 +10,12 @@ namespace ECS
     {
         internal IEnumerable<Entity> LastInterested = new List<Entity>();
         internal readonly Aspect Aspect;
+        internal int AspectHash { get; }
 
         protected EntitySystem(Aspect aspect)
         {
             Aspect = aspect;
+            AspectHash = aspect.GetHashCode();
         }
 
         internal override void SystemRemovedInternal()
@@ -45,7 +47,7 @@ namespace ECS
 
         internal sealed override void Update(float deltaTime)
         {
-            var entities = Context.FindEntities(Aspect).ToList();
+            var entities = Context.FindEntities(Aspect);
 
             // Check for added and removed entities and call the respective methods for them
             // TODO: There is probably more efficient way to check for added and removed entities
