@@ -47,6 +47,7 @@ namespace ECS
                     {
                         system.Context = context;
                         systems.GetOrAddNew(layer).Add(system);
+                        system.MissedUpdates = true;
                         system.SystemAddedInternal();
                     }
                     else

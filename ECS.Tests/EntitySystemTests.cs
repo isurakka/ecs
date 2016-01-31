@@ -7,13 +7,14 @@ using ECS;
 using Xunit;
 namespace ECS.Tests
 {
-    public class EntitySystemTests : IClassFixture<EntityComponentSystem>
+    [Collection("ECS")]
+    public class EntitySystemTests
     {
         EntityComponentSystem ecs;
 
-        public EntitySystemTests(EntityComponentSystem ecs)
+        public EntitySystemTests()
         {
-            this.ecs = ecs;
+            this.ecs = EntityComponentSystem.Instance;
         }
 
         [Fact()]
@@ -108,6 +109,7 @@ namespace ECS.Tests
             Assert.Equal(1, processings2);
         }
 
+        /*
         [Fact()]
         public void OnAddedTest()
         {
@@ -208,6 +210,7 @@ namespace ECS.Tests
             ecs.RemoveSystem(sys, 0);
             ecs.Update(1f);
         }
+        */
 
         [Fact()]
         public void BeginEndTest()

@@ -7,7 +7,8 @@ using ECS;
 using Xunit;
 namespace ECS.Tests
 {
-    public class IntervalEntitySystemTests : IClassFixture<EntityComponentSystem>
+    [Collection("ECS")]
+    public class IntervalEntitySystemTests
     {
         class TestIntervalEntitySystem : IntervalEntityProcessingSystem
         {
@@ -25,9 +26,9 @@ namespace ECS.Tests
 
         EntityComponentSystem ecs;
 
-        public IntervalEntitySystemTests(EntityComponentSystem ecs)
+        public IntervalEntitySystemTests()
         {
-            this.ecs = ecs;
+            this.ecs = EntityComponentSystem.Instance;
         }
 
         [Fact()]

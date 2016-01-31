@@ -9,6 +9,45 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
+    public class EntityChange
+    {
+        public enum ChangeType
+        {
+            EntityAdded,
+            EntityRemoved,
+            ComponentAdded,
+            ComponentRemoved,
+        }
+
+        public Entity Entity { get; }
+        public IComponent RelevantComponent { get; }
+
+        private Type componentType;
+        public Type ComponentType => componentType ?? (componentType = RelevantComponent?.GetType());
+
+        public ChangeType TypeOfChange { get; set; }
+
+        protected EntityChange(Entity entity, IComponent relevantComponent, Type componentType, ChangeType typeOfChange)
+        {
+            Entity = entity;
+            RelevantComponent = relevantComponent;
+            this.componentType = componentType;
+            TypeOfChange = typeOfChange;
+        }
+
+        public static EntityChange CreateEntityAdded(Entity entity)
+            => new EntityChange(entity, null, null, ChangeType.EntityAdded);
+
+        public static EntityChange CreateEntityRemoved(Entity entity)
+            => new EntityChange(entity, null, null, ChangeType.EntityRemoved);
+
+        public static EntityChange CreateComponentAdded(Entity entity, IComponent component, Type componentType)
+            => new EntityChange(entity, component, componentType, ChangeType.ComponentAdded);
+
+        public static EntityChange CreateComponentRemoved(Entity entity, IComponent component, Type componentType)
+            => new EntityChange(entity, component, componentType, ChangeType.ComponentRemoved);
+    }
+
     internal class EntityManager : IEntityUtility
     {
         private int nextEntityId;
@@ -19,30 +58,13 @@ namespace ECS
 
         // array of component bitsets where key is entity id
         // null means that entity doesn't exist
-        private BigInteger?[] entityComponentBits;
-        private Entity[] entityCache;
-        private Dictionary<int, bool>[] entityInterestedCache; 
+        internal BigInteger?[] entityComponentBits;
+        internal Entity[] entityCache;
+        private Dictionary<int, bool>[] entityInterestedCache;
+        private readonly Queue<EntityChange> pendingChanges;
+        internal readonly List<EntityChange> changesInLastFlush;
 
-        // key = entity id, value 1 = component type, value 2 = component instance
-        private readonly Queue<Tuple<int, Type, IComponent>> pendingComponentAdds;
-
-        // key = entity id, value = component type
-        private readonly Queue<Tuple<int, Type>> pendingComponentRemovals;
-
-        private readonly Queue<Entity> pendingEntityAdds;
-
-        // key = entity id
-        private readonly Queue<int> pendingEntityRemovals;
-
-        private readonly Queue<EntityChange> pendingChangeOrder;  
-
-        private enum EntityChange
-        {
-            AddEntity,
-            RemoveEntity,
-            AddComponent,
-            RemoveComponent,
-        }
+        //public event EventHandler<Entity> EntityChanged;
 
         internal EntityManager()
         {
@@ -51,19 +73,14 @@ namespace ECS
             entityCache = new Entity[0];
             entityInterestedCache = new Dictionary<int, bool>[0];
 
-            pendingComponentAdds = new Queue<Tuple<int, Type, IComponent>>();
-            pendingComponentRemovals = new Queue<Tuple<int, Type>>();
-            pendingEntityAdds = new Queue<Entity>();
-            pendingEntityRemovals = new Queue<int>();
-            pendingChangeOrder = new Queue<EntityChange>();
+            pendingChanges = new Queue<EntityChange>();
+            changesInLastFlush = new List<EntityChange>();
         }
 
         public Entity CreateEntity()
         {
             var entity = new Entity(nextEntityId++, this);
-            pendingEntityAdds.Enqueue(entity);
-            pendingChangeOrder.Enqueue(EntityChange.AddEntity);
-            FlushPending();
+            pendingChanges.Enqueue(EntityChange.CreateEntityAdded(entity));
             return entity;
         }
 
@@ -84,13 +101,13 @@ namespace ECS
                 Array.Resize(ref entityInterestedCache, componentArraySize);
             }
 
-            var entity = pendingEntityAdds.Dequeue();
-            entityComponentBits[entity.Id] = BigInteger.Zero;
-            entityCache[entity.Id] = new Entity(entity.Id, this);
+            var entityChange = pendingChanges.Dequeue();
+            entityComponentBits[entityChange.Entity.Id] = BigInteger.Zero;
+            entityCache[entityChange.Entity.Id] = entityChange.Entity;
 
-            if (entityInterestedCache[entity.Id] == null)
+            if (entityInterestedCache[entityChange.Entity.Id] == null)
             {
-                entityInterestedCache[entity.Id] = new Dictionary<int, bool>();
+                entityInterestedCache[entityChange.Entity.Id] = new Dictionary<int, bool>();
             }
         }
 
@@ -101,13 +118,12 @@ namespace ECS
                 RemoveComponent(entity, component);
             }
 
-            pendingEntityRemovals.Enqueue(entity.Id);
-            pendingChangeOrder.Enqueue(EntityChange.RemoveEntity);
+            pendingChanges.Enqueue(EntityChange.CreateEntityRemoved(entity));
         } 
 
         internal void FlushEntityRemovalOnce()
         {
-            var id = pendingEntityRemovals.Dequeue();
+            var id = pendingChanges.Dequeue().Entity.Id;
             foreach (var pair in components)
             {
                 pair.Value[id] = null;
@@ -119,17 +135,15 @@ namespace ECS
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            pendingComponentAdds.Enqueue(Tuple.Create(entity.Id, typeof(T), (IComponent)component));
-            pendingChangeOrder.Enqueue(EntityChange.AddComponent);
-            FlushPending();
+            pendingChanges.Enqueue(EntityChange.CreateComponentAdded(entity, component, typeof(T)));
         }
 
         internal void FlushComponentAddOnce()
         {
-            var tuple = pendingComponentAdds.Dequeue();
-            var id = tuple.Item1;
-            var type = tuple.Item2;
-            var component = tuple.Item3;
+            var entityChange = pendingChanges.Dequeue();
+            var id = entityChange.Entity.Id;
+            var type = entityChange.RelevantComponent.GetType();
+            var component = entityChange.RelevantComponent;
 
             if (!components.ContainsKey(type))
             {
@@ -150,21 +164,19 @@ namespace ECS
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            pendingComponentRemovals.Enqueue(Tuple.Create(entity.Id, typeof(T)));
-            pendingChangeOrder.Enqueue(EntityChange.RemoveComponent);
+            pendingChanges.Enqueue(EntityChange.CreateComponentRemoved(entity, null, typeof (T)));
         }
 
         public void RemoveComponent(Entity entity, IComponent component)
         {
-            pendingComponentRemovals.Enqueue(Tuple.Create(entity.Id, component.GetType()));
-            pendingChangeOrder.Enqueue(EntityChange.RemoveComponent);
+            pendingChanges.Enqueue(EntityChange.CreateComponentRemoved(entity, component, null));
         }
 
         internal void FlushComponentRemovalOnce()
         {
-            var tuple = pendingComponentRemovals.Dequeue();
-            var id = tuple.Item1;
-            var type = tuple.Item2;
+            var entityChange = pendingChanges.Dequeue();
+            var id = entityChange.Entity.Id;
+            var type = entityChange.ComponentType;
             components[type][id] = null;
             entityComponentBits[id] &= ~AspectMapper.TypesToBigInteger(type);
             entityInterestedCache[id].Clear();
@@ -209,7 +221,8 @@ namespace ECS
                 bool interested;
                 if (!entityInterestedCache[i].TryGetValue(aspectHash, out interested))
                 {
-                    interested = aspect.Interested(entityComponentBits[i].Value);
+                    // TODO: Don't cache aspect here
+                    interested = aspect.Cache.Interested(entityComponentBits[i].Value);
                     entityInterestedCache[i][aspectHash] = interested;
                 }
 
@@ -223,26 +236,28 @@ namespace ECS
 
         internal void FlushPending()
         {
-            while (pendingChangeOrder.Any())
+            changesInLastFlush.Clear();
+            while (pendingChanges.Any())
             {
-                var change = pendingChangeOrder.Dequeue();
-                switch (change)
+                var entityChange = pendingChanges.Peek();
+                switch (entityChange.TypeOfChange)
                 {
-                    case EntityChange.AddEntity:
+                    case EntityChange.ChangeType.EntityAdded:
                         FlushEntityAddOnce();
                         break;
-                    case EntityChange.RemoveEntity:
+                    case EntityChange.ChangeType.EntityRemoved:
                         FlushEntityRemovalOnce();
                         break;
-                    case EntityChange.AddComponent:
+                    case EntityChange.ChangeType.ComponentAdded:
                         FlushComponentAddOnce();
                         break;
-                    case EntityChange.RemoveComponent:
+                    case EntityChange.ChangeType.ComponentRemoved:
                         FlushComponentRemovalOnce();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+                changesInLastFlush.Add(entityChange);
             }
         }
     }

@@ -43,7 +43,7 @@ namespace ECS
 
         public bool Equals(Entity other)
         {
-            if (ReferenceEquals(null, other) || !ReferenceEquals(this.EntityUtility, other.EntityUtility))
+            if (ReferenceEquals(null, other))
             {
                 return false;
             }

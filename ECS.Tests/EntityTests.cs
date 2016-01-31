@@ -7,13 +7,14 @@ using ECS;
 using Xunit;
 namespace ECS.Tests
 {
-    public class EntityTests : IClassFixture<EntityComponentSystem>
+    [Collection("ECS")]
+    public class EntityTests
     {
         EntityComponentSystem ecs;
 
-        public EntityTests(EntityComponentSystem ecs)
+        public EntityTests()
         {
-            this.ecs = ecs;
+            this.ecs = EntityComponentSystem.Instance;
         }
 
         [Fact()]
@@ -21,10 +22,10 @@ namespace ECS.Tests
         {
             var ent = ecs.CreateEntity();
             ecs.Update(1f);
-            Assert.Equal(ent, ecs.FindEntities(Aspect.Any()).First());
+            Assert.True(ecs.FindEntities(Aspect.Any()).Contains(ent));
             ent.Remove();
             ecs.Update(1f);
-            Assert.Equal(null, ecs.FindEntities(Aspect.Any()).FirstOrDefault());
+            Assert.False(ecs.FindEntities(Aspect.Any()).Contains(ent));
         }
 
         [Fact()]
@@ -182,22 +183,6 @@ namespace ECS.Tests
             ent.Remove();
             ent2.Remove();
             ecs.Update(1f);
-        }
-
-        [Fact()]
-        public void EqualsDifferentECSTest()
-        {
-            var ecs1 = new EntityComponentSystem();
-            var ecs2 = new EntityComponentSystem();
-
-            var ent1 = ecs1.CreateEntity();
-            var ent2 = ecs2.CreateEntity();
-
-            ecs1.Update(1f);
-            ecs2.Update(1f);
-
-            Assert.NotEqual(ent1, ent2);
-            Assert.NotEqual(ent2, ent1);
         }
 
         [Fact()]

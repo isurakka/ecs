@@ -8,17 +8,24 @@ namespace ECS
 {
     public class EntityComponentSystem
     {
-        private readonly EntityManager entityManager;
+        internal readonly EntityManager entityManager;
         private readonly SystemManager systemManager;
 
         private static readonly bool running64Bit;
+
+        private static EntityComponentSystem instance;
+        /// <summary>
+        /// Get the singleton instance. This will probably not be singleton in the future.
+        /// </summary>
+        public static EntityComponentSystem Instance 
+            => instance ?? (instance = new EntityComponentSystem());
 
         static EntityComponentSystem()
         {
             running64Bit = Environment.Is64BitProcess;
         }
 
-        public EntityComponentSystem()
+        private EntityComponentSystem()
         {
             entityManager = new EntityManager();
             systemManager = new SystemManager { context = this };
@@ -38,7 +45,7 @@ namespace ECS
 
         public Entity GetEntity(int id)
         {
-            return new Entity(id, entityManager);
+            return entityManager.entityCache[id];
         }
 
         public void Update(float deltaTime)
@@ -53,6 +60,10 @@ namespace ECS
                 foreach (var system in systems)
                 {
                     system.Update(deltaTime);
+                    if (system.MissedUpdates)
+                    {
+                        system.MissedUpdates = false;
+                    }
                 }
 
                 FlushChanges();

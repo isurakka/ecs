@@ -8,26 +8,13 @@ namespace ECS
 {
     public abstract class EntitySystem : System
     {
-        internal IEnumerable<Entity> LastInterested = new List<Entity>();
         internal readonly Aspect Aspect;
-        internal int AspectHash { get; }
+        protected readonly HashSet<Entity> interestedEntities;
 
         protected EntitySystem(Aspect aspect)
         {
             Aspect = aspect;
-            AspectHash = aspect.GetHashCode();
-        }
-
-        internal override void SystemRemovedInternal()
-        {
-            foreach (var item in LastInterested)
-            {
-                OnRemoved(item);
-            }
-
-            LastInterested = new List<Entity>();
-
-            base.SystemRemovedInternal();
+            interestedEntities = new HashSet<Entity>();
         }
 
         /// <summary>
@@ -41,43 +28,61 @@ namespace ECS
         /// </summary>
         protected virtual void End() { }
 
-        protected virtual void OnAdded(Entity entity) { }
-
-        protected virtual void OnRemoved(Entity entity) { }
-
-        internal sealed override void Update(float deltaTime)
+        internal override void Update(float deltaTime)
         {
-            var entities = Context.FindEntities(Aspect);
-
-            // Check for added and removed entities and call the respective methods for them
-            // TODO: There is probably more efficient way to check for added and removed entities
-            // TODO: Check only if entity has changed
-            var added = entities.Except(LastInterested);
-            var removed = LastInterested.Except(entities);
-
-            foreach (var removedEntity in removed)
+            if (MissedUpdates)
             {
-                OnRemoved(removedEntity);
+                interestedEntities.Clear();
+                foreach (var entity in Context.FindEntities(Aspect))
+                {
+                    interestedEntities.Add(entity);
+                }
             }
-
-            foreach (var addedEntity in added)
+            else
             {
-                OnAdded(addedEntity);
+                foreach (var entityChange in EntityComponentSystem.Instance.entityManager.changesInLastFlush)
+                {
+                    switch (entityChange.TypeOfChange)
+                    {
+                        case EntityChange.ChangeType.EntityAdded:
+                        case EntityChange.ChangeType.ComponentAdded:
+                        {
+                            var entityComponentBits = EntityComponentSystem.Instance.entityManager.entityComponentBits[entityChange.Entity.Id];
+                            if (entityComponentBits.HasValue && Aspect.Cache.Interested(entityComponentBits.Value))
+                            {
+                                interestedEntities.Add(entityChange.Entity);
+                            }
+                        }
+                            break;
+                        case EntityChange.ChangeType.EntityRemoved:
+                            interestedEntities.Remove(entityChange.Entity);
+                            break;
+                        default:
+                        {
+                            var entityComponentBits = EntityComponentSystem.Instance.entityManager.entityComponentBits[entityChange.Entity.Id];
+                            if (!entityComponentBits.HasValue || Aspect.Cache.Interested(entityComponentBits.Value))
+                            {
+                                interestedEntities.Remove(entityChange.Entity);
+                            }
+                        }
+                            break;
+                    }
+                }
             }
-
-            LastInterested = entities;
 
             // Start of actual processing
             // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)
             Begin();
 
-            var preprocessed = PreprocessEntities(entities);
+            var preprocessed = PreprocessEntities(interestedEntities);
             ProcessEntities(preprocessed, deltaTime);
 
             End();
         }
 
-        protected sealed override void Process(float deltaTime) { }
+        protected sealed override void Process(float deltaTime)
+        {
+        }
 
         protected abstract void ProcessEntities(IEnumerable<Entity> entities, float deltaTime);
 

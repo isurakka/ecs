@@ -10,6 +10,8 @@ namespace ECS
     {
         protected internal EntityComponentSystem Context { get; internal set; }
 
+        protected internal bool MissedUpdates { get; internal set; }
+
         internal virtual void SystemAddedInternal() => SystemAdded();
 
         protected virtual void SystemAdded() {  }

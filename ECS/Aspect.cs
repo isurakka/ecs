@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
+    // TODO: Remove static and support passing mapper to Aspect in some way when caching
     public static class AspectMapper
     {
         private static readonly Dictionary<Type, int> shiftForType = new Dictionary<Type, int>();
@@ -26,7 +27,7 @@ namespace ECS
             foreach (var type in types)
             {
                 Debug.Assert(typeof(IComponent).IsAssignableFrom(type),
-                    $"{nameof(ComponentTypesToBigIntegerMapper)} should only be used with {nameof(IComponent)} types");
+                    $"{nameof(AspectMapper)} should only be used with {nameof(IComponent)} types");
 
                 int shift;
                 var success = shiftForType.TryGetValue(type, out shift);
@@ -43,64 +44,58 @@ namespace ECS
 
     public class Aspect
     {
-        private readonly BigInteger all;
-        private readonly BigInteger any;
+        private readonly ImmutableHashSet<Type> all;
+        private readonly ImmutableHashSet<Type> any;
 
-        internal Aspect(BigInteger all, BigInteger any)
+        private Aspect(ImmutableHashSet<Type> all, ImmutableHashSet<Type> any)
         {
             this.all = all;
             this.any = any;
         }
 
         public static Aspect Empty()
-        {
-            return new Aspect(
-                BigInteger.Zero,
-                BigInteger.Zero);
-        }
+            => new Aspect(
+                ImmutableHashSet.Create<Type>(),
+                ImmutableHashSet.Create<Type>());
 
         public static Aspect All(params Type[] types)
-        {
-            return new Aspect(
-                AspectMapper.TypesToBigInteger(types),
-                BigInteger.Zero);
-        }
-
-        public Aspect AndWithAll(params Type[] types)
-        {
-            return new Aspect(
-                all | AspectMapper.TypesToBigInteger(types),
-                any);
-        }
+            => new Aspect(
+                ImmutableHashSet.Create(types),
+                ImmutableHashSet.Create<Type>());
 
         public static Aspect Any(params Type[] types)
-        {
-            return new Aspect(
-                BigInteger.Zero,
-                AspectMapper.TypesToBigInteger(types));
-        }
+            => new Aspect(
+                ImmutableHashSet.Create<Type>(),
+                ImmutableHashSet.Create(types));
+
+        public Aspect AndWithAll(params Type[] types)
+            => new Aspect(
+                all.Union(types),
+                any);
 
         public Aspect AndWithAny(params Type[] types)
-        {
-            return new Aspect(
+            => new Aspect(
                 all,
-                any | AspectMapper.TypesToBigInteger(types));
-        }
+                any.Union(types));
 
-        // TODO: Is this dumb?
-        public bool Interested(BigInteger bi)
+        private Cached cache;
+        public Cached Cache
+            => cache ?? (cache = new Cached(AspectMapper.TypesToBigInteger(all), AspectMapper.TypesToBigInteger(any)));
+
+        public class Cached
         {
-            return (all & bi) == all && 
-                    (any == BigInteger.Zero || (any & bi) != BigInteger.Zero);
-        }
+            private readonly BigInteger all;
+            private readonly BigInteger any;
 
-
-        public override int GetHashCode()
-        {
-            unchecked
+            public Cached(BigInteger all, BigInteger any)
             {
-                return (all.GetHashCode() * 397) ^ any.GetHashCode();
+                this.all = all;
+                this.any = any;
             }
+
+            public bool Interested(BigInteger bi)
+                => (all & bi) == all &&
+                    (any == BigInteger.Zero || (any & bi) != BigInteger.Zero);
         }
     }
 }
