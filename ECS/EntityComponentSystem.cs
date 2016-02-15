@@ -50,6 +50,7 @@ namespace ECS
 
         public void Update(float deltaTime)
         {
+            entityManager.Updating = true;
             FlushChanges();
 
             // 256 MB
@@ -70,10 +71,12 @@ namespace ECS
             }
 
             if (noGc) GC.EndNoGCRegion();
+            entityManager.Updating = false;
         }
 
         public void UpdateSpecific(float deltaTime, int layer)
         {
+            entityManager.Updating = true;
             FlushChanges();
 
             foreach (var system in systemManager.GetSystems(layer))
@@ -82,6 +85,7 @@ namespace ECS
             }
 
             FlushChanges();
+            entityManager.Updating = false;
         }
 
         public void FlushChanges()

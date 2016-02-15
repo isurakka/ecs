@@ -60,18 +60,20 @@ namespace ECS
         // null means that entity doesn't exist
         internal BigInteger?[] entityComponentBits;
         internal Entity[] entityCache;
-        private Dictionary<int, bool>[] entityInterestedCache;
+        //private Dictionary<int, bool>[] entityInterestedCache;
         private readonly Queue<EntityChange> pendingChanges;
         internal readonly List<EntityChange> changesInLastFlush;
 
         //public event EventHandler<Entity> EntityChanged;
+
+        internal bool Updating { get; set; }
 
         internal EntityManager()
         {
             components = new Dictionary<Type, IComponent[]>();
             entityComponentBits = new BigInteger?[0];
             entityCache = new Entity[0];
-            entityInterestedCache = new Dictionary<int, bool>[0];
+            //entityInterestedCache = new Dictionary<int, bool>[0];
 
             pendingChanges = new Queue<EntityChange>();
             changesInLastFlush = new List<EntityChange>();
@@ -80,7 +82,13 @@ namespace ECS
         public Entity CreateEntity()
         {
             var entity = new Entity(nextEntityId++, this);
-            pendingChanges.Enqueue(EntityChange.CreateEntityAdded(entity));
+            var entityChange = EntityChange.CreateEntityAdded(entity);
+            pendingChanges.Enqueue(entityChange);
+
+            if (Updating) return entity;
+
+            FlushEntityAddOnce();
+            changesInLastFlush.Add(entityChange);
             return entity;
         }
 
@@ -98,17 +106,17 @@ namespace ECS
 
                 Array.Resize(ref entityComponentBits, componentArraySize);
                 Array.Resize(ref entityCache, componentArraySize);
-                Array.Resize(ref entityInterestedCache, componentArraySize);
+                //Array.Resize(ref entityInterestedCache, componentArraySize);
             }
 
             var entityChange = pendingChanges.Dequeue();
             entityComponentBits[entityChange.Entity.Id] = BigInteger.Zero;
             entityCache[entityChange.Entity.Id] = entityChange.Entity;
 
-            if (entityInterestedCache[entityChange.Entity.Id] == null)
-            {
-                entityInterestedCache[entityChange.Entity.Id] = new Dictionary<int, bool>();
-            }
+            //if (entityInterestedCache[entityChange.Entity.Id] == null)
+            //{
+            //    entityInterestedCache[entityChange.Entity.Id] = new Dictionary<int, bool>();
+            //}
         }
 
         public void RemoveEntity(Entity entity)
@@ -118,7 +126,13 @@ namespace ECS
                 RemoveComponent(entity, component);
             }
 
-            pendingChanges.Enqueue(EntityChange.CreateEntityRemoved(entity));
+            var entityChange = EntityChange.CreateEntityRemoved(entity);
+            pendingChanges.Enqueue(entityChange);
+
+            if (Updating) return;
+
+            FlushEntityRemovalOnce();
+            changesInLastFlush.Add(entityChange);
         } 
 
         internal void FlushEntityRemovalOnce()
@@ -130,12 +144,18 @@ namespace ECS
             }
             entityComponentBits[id] = null;
             entityCache[id] = null;
-            entityInterestedCache[id].Clear();
+            //entityInterestedCache[id].Clear();
         }
 
         public void AddComponent<T>(Entity entity, T component) where T : IComponent
         {
-            pendingChanges.Enqueue(EntityChange.CreateComponentAdded(entity, component, typeof(T)));
+            var entityChange = EntityChange.CreateComponentAdded(entity, component, typeof (T));
+            pendingChanges.Enqueue(entityChange);
+
+            if (Updating) return;
+
+            FlushComponentAddOnce();
+            changesInLastFlush.Add(entityChange);
         }
 
         internal void FlushComponentAddOnce()
@@ -159,17 +179,29 @@ namespace ECS
 
             components[type][id] = component;
             entityComponentBits[id] |= AspectMapper.TypesToBigInteger(type);
-            entityInterestedCache[id].Clear();
+            //entityInterestedCache[id].Clear();
         }
 
         public void RemoveComponent<T>(Entity entity) where T : IComponent
         {
-            pendingChanges.Enqueue(EntityChange.CreateComponentRemoved(entity, null, typeof (T)));
+            var entityChange = EntityChange.CreateComponentRemoved(entity, null, typeof (T));
+            pendingChanges.Enqueue(entityChange);
+
+            if (Updating) return;
+
+            FlushComponentRemovalOnce();
+            changesInLastFlush.Add(entityChange);
         }
 
         public void RemoveComponent(Entity entity, IComponent component)
         {
-            pendingChanges.Enqueue(EntityChange.CreateComponentRemoved(entity, component, null));
+            var entityChange = EntityChange.CreateComponentRemoved(entity, component, null);
+            pendingChanges.Enqueue(entityChange);
+
+            if (Updating) return;
+
+            FlushComponentRemovalOnce();
+            changesInLastFlush.Add(entityChange);
         }
 
         internal void FlushComponentRemovalOnce()
@@ -179,7 +211,7 @@ namespace ECS
             var type = entityChange.ComponentType;
             components[type][id] = null;
             entityComponentBits[id] &= ~AspectMapper.TypesToBigInteger(type);
-            entityInterestedCache[id].Clear();
+            //entityInterestedCache[id].Clear();
         }
 
         public IEnumerable<IComponent> GetComponents(Entity entity)
@@ -212,6 +244,7 @@ namespace ECS
 
         internal IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
+            /*
             var ret = new List<Entity>();
             for (int i = 0; i < componentArraySize; i++)
             {
@@ -232,6 +265,14 @@ namespace ECS
                 }
             }
             return ret;
+            */
+
+            for (int i = 0; i < componentArraySize; i++)
+            {
+                if (entityComponentBits[i] == null) continue;
+
+                if (aspect.Cache.Interested(entityComponentBits[i].Value)) yield return entityCache[i];
+            }
         }
 
         internal void FlushPending()

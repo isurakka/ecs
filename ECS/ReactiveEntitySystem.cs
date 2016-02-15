@@ -15,6 +15,12 @@ namespace ECS
             
         }
 
+        protected ReactiveEntitySystem(params Type[] types)
+            : base(Aspect.All(types))
+        {
+
+        }
+
         internal override void SystemRemovedInternal()
         {
             foreach (var entity in interestedEntities)

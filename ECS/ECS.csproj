@@ -49,6 +49,7 @@
     <Compile Include="Aspect.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityComponentSystem.cs" />
+    <Compile Include="ReactiveEntityProcessingSystem.cs" />
     <Compile Include="EntityProcessingSystem.cs" />
     <Compile Include="ReactiveEntitySystem.cs" />
     <Compile Include="IDictionaryExt.cs" />
