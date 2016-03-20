@@ -84,7 +84,7 @@ namespace ECS
             return entity;
         }
 
-        internal void FlushEntityAddOnce()
+        internal void FlushEntityAdd(EntityChange entityChange)
         {
             if (componentArraySize < nextEntityId)
             {
@@ -101,7 +101,6 @@ namespace ECS
                 Array.Resize(ref entityInterestedCache, componentArraySize);
             }
 
-            var entityChange = pendingChanges.Dequeue();
             entityComponentBits[entityChange.Entity.Id] = BigInteger.Zero;
             entityCache[entityChange.Entity.Id] = entityChange.Entity;
 
@@ -121,9 +120,9 @@ namespace ECS
             pendingChanges.Enqueue(EntityChange.CreateEntityRemoved(entity));
         } 
 
-        internal void FlushEntityRemovalOnce()
+        internal void FlushEntityRemoval(EntityChange entityChange)
         {
-            var id = pendingChanges.Dequeue().Entity.Id;
+            var id = entityChange.Entity.Id;
             foreach (var pair in components)
             {
                 pair.Value[id] = null;
@@ -138,9 +137,8 @@ namespace ECS
             pendingChanges.Enqueue(EntityChange.CreateComponentAdded(entity, component, typeof(T)));
         }
 
-        internal void FlushComponentAddOnce()
+        internal void FlushComponentAdd(EntityChange entityChange)
         {
-            var entityChange = pendingChanges.Dequeue();
             var id = entityChange.Entity.Id;
             var type = entityChange.RelevantComponent.GetType();
             var component = entityChange.RelevantComponent;
@@ -172,9 +170,8 @@ namespace ECS
             pendingChanges.Enqueue(EntityChange.CreateComponentRemoved(entity, component, null));
         }
 
-        internal void FlushComponentRemovalOnce()
+        internal void FlushComponentRemoval(EntityChange entityChange)
         {
-            var entityChange = pendingChanges.Dequeue();
             var id = entityChange.Entity.Id;
             var type = entityChange.ComponentType;
             components[type][id] = null;
@@ -239,20 +236,20 @@ namespace ECS
             changesInLastFlush.Clear();
             while (pendingChanges.Any())
             {
-                var entityChange = pendingChanges.Peek();
+                var entityChange = pendingChanges.Dequeue();
                 switch (entityChange.TypeOfChange)
                 {
                     case EntityChange.ChangeType.EntityAdded:
-                        FlushEntityAddOnce();
+                        FlushEntityAdd(entityChange);
                         break;
                     case EntityChange.ChangeType.EntityRemoved:
-                        FlushEntityRemovalOnce();
+                        FlushEntityRemoval(entityChange);
                         break;
                     case EntityChange.ChangeType.ComponentAdded:
-                        FlushComponentAddOnce();
+                        FlushComponentAdd(entityChange);
                         break;
                     case EntityChange.ChangeType.ComponentRemoved:
-                        FlushComponentRemovalOnce();
+                        FlushComponentRemoval(entityChange);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
