@@ -21,7 +21,7 @@ namespace ECS.Tests
         public void ProcessCorrectEntitiesTest()
         {
             int processings = 0;
-            var sys = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
+            var sys = new ClosureEntityProcessingSystem(Aspect.Any(), null)
             {
                 ProcessorAction = (e, dt) => processings++,
             };
@@ -109,7 +109,6 @@ namespace ECS.Tests
             Assert.Equal(1, processings2);
         }
 
-        /*
         [Fact()]
         public void OnAddedTest()
         {
@@ -210,7 +209,6 @@ namespace ECS.Tests
             ecs.RemoveSystem(sys, 0);
             ecs.Update(1f);
         }
-        */
 
         [Fact()]
         public void BeginEndTest()
@@ -248,11 +246,11 @@ namespace ECS.Tests
             var pro1 = false;
             var pro2 = false;
 
-            var sys1 = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
+            var sys1 = new ClosureEntityProcessingSystem(Aspect.Any(), null)
             {
                 ProcessorAction = (e, dt) => { pro1 = true; Assert.False(pro2); }
             };
-            var sys2 = new ClosureEntityProcessingSystem(Aspect.Empty(), null)
+            var sys2 = new ClosureEntityProcessingSystem(Aspect.Any(), null)
             {
                 ProcessorAction = (e, dt) => { pro2 = true; Assert.True(pro1); }
             };

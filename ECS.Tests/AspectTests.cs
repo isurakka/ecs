@@ -27,7 +27,7 @@ namespace ECS.Tests
         [Fact()]
         public void EmptyTest()
         {
-            var asp1 = Aspect.Empty().Cache;
+            var asp1 = Aspect.Any().Cache;
             //asp1.Cache(mapper)
 
             Assert.True(asp1.Interested(none));

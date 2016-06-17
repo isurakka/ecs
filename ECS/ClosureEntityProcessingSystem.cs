@@ -11,7 +11,8 @@ namespace ECS
         public Action<Entity, float> ProcessorAction;
         public Action BeginAction;
         public Action EndAction;
-        public Func<IEnumerable<Entity>, IEnumerable<Entity>> PreprocessEntitiesAction;
+        public Action<Entity> OnAddedAction;
+        public Action<Entity> OnRemovedAction;
 
         public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor)
             : base(aspect)
@@ -29,14 +30,14 @@ namespace ECS
             EndAction?.Invoke();
         }
 
-        protected override IEnumerable<Entity> PreprocessEntities(IEnumerable<Entity> entities)
+        protected override void OnAdded(Entity entity)
         {
-            if (PreprocessEntitiesAction == null)
-            {
-                return entities;
-            }
+            OnAddedAction?.Invoke(entity);
+        }
 
-            return PreprocessEntitiesAction(entities);
+        protected override void OnRemoved(Entity entity)
+        {
+            OnRemovedAction?.Invoke(entity);
         }
 
         protected override void Process(Entity entity, float deltaTime)

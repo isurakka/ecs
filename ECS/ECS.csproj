@@ -45,12 +45,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EntityManager.cs" />
+    <Compile Include="EntityChange.cs" />
     <Compile Include="Aspect.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityComponentSystem.cs" />
     <Compile Include="EntityProcessingSystem.cs" />
-    <Compile Include="ReactiveEntitySystem.cs" />
     <Compile Include="IDictionaryExt.cs" />
     <Compile Include="IEntityUtility.cs" />
     <Compile Include="IntervalEntityProcessingSystem.cs" />
@@ -59,7 +58,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClosureEntityProcessingSystem.cs" />
     <Compile Include="System.cs" />
-    <Compile Include="SystemManager.cs" />
+    <Compile Include="SystemChange.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

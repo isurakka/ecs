@@ -15,7 +15,7 @@ namespace ECS.Tests
             public int Processings = 0;
 
             public TestIntervalEntitySystem()
-                : base(Aspect.Empty(), 1f)
+                : base(Aspect.Any(), 1f)
             { }
 
             protected override void Process(Entity entity, float deltaTime)
@@ -56,6 +56,10 @@ namespace ECS.Tests
             Assert.Equal(10, sys.Processings);
 
             Assert.Equal(1f, sys.Interval);
+
+            ecs.RemoveSystem(sys, 0);
+            ent.Remove();
+            ecs.Update(0f);
         }
     }
 }

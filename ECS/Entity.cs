@@ -11,35 +11,38 @@ namespace ECS
     {
         public int Id { get; }
 
-        internal IEntityUtility EntityUtility;
+        private readonly IEntityUtility entityUtility;
 
-        public IEnumerable<IComponent> Components => EntityUtility.GetComponents(this);
+        public IEnumerable<IComponent> Components => entityUtility.GetComponents(this);
 
         internal Entity(int id, IEntityUtility entityUtility)
         {
             Id = id;
-            EntityUtility = entityUtility;
+            this.entityUtility = entityUtility;
         }
 
-        public void Remove() => EntityUtility.RemoveEntity(this);
+        public void Remove() => entityUtility.RemoveEntity(this);
 
         public void AddComponent<T>(T component) where T : IComponent
-            => EntityUtility.AddComponent(this, component);
+            => entityUtility.AddComponent(this, component);
+
+        public T AddComponent<T>() where T : IComponent, new() 
+            => entityUtility.AddComponent<T>(this);
 
         public void RemoveComponent<T>(T component) where T: IComponent
-            => EntityUtility.RemoveComponent(this, component);
+            => entityUtility.RemoveComponent(this, component);
 
         public void RemoveComponent<T>() where T: IComponent
-            => EntityUtility.RemoveComponent<T>(this);
+            => entityUtility.RemoveComponent<T>(this);
 
         public bool HasComponent<T>() where T: IComponent
-            => EntityUtility.HasComponent<T>(this);
+            => entityUtility.HasComponent<T>(this);
 
         public bool HasComponent(IComponent component)
-            => EntityUtility.HasComponent(this, component);
+            => entityUtility.HasComponent(this, component);
 
         public T GetComponent<T>() where T : IComponent 
-            => EntityUtility.GetComponent<T>(this);
+            => entityUtility.GetComponent<T>(this);
 
         public bool Equals(Entity other)
         {

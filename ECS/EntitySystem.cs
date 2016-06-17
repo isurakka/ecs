@@ -9,7 +9,8 @@ namespace ECS
     public abstract class EntitySystem : System
     {
         internal readonly Aspect Aspect;
-        protected readonly HashSet<Entity> interestedEntities;
+
+        protected HashSet<Entity> interestedEntities;
 
         protected EntitySystem(Aspect aspect)
         {
@@ -28,54 +29,71 @@ namespace ECS
         /// </summary>
         protected virtual void End() { }
 
+        internal void EntityChanged(EntityChange entityChange)
+        {
+            switch (entityChange.TypeOfChange)
+            {
+                case EntityChange.ChangeType.EntityAdded:
+                    if (Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
+                    {
+                        interestedEntities.Add(entityChange.Entity);
+                        OnAdded(entityChange.Entity);
+                    }
+                    break;
+                case EntityChange.ChangeType.EntityRemoved:
+                    var removed = interestedEntities.Remove(entityChange.Entity);
+                    if (removed)
+                    {
+                        OnRemoved(entityChange.Entity);
+                    }
+                    break;
+                case EntityChange.ChangeType.ComponentAdded:
+                    if (!interestedEntities.Contains(entityChange.Entity) && Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
+                    {
+                        interestedEntities.Add(entityChange.Entity);
+                        OnAdded(entityChange.Entity);
+                    }
+                    break;
+                case EntityChange.ChangeType.ComponentRemoved:
+                    if (interestedEntities.Contains(entityChange.Entity) && !Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
+                    {
+                        interestedEntities.Remove(entityChange.Entity);
+                        OnRemoved(entityChange.Entity);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        protected virtual void OnAdded(Entity entity) { }
+
+        protected virtual void OnRemoved(Entity entity) { }
+
+        internal override void SystemAddedInternal()
+        {
+            interestedEntities = new HashSet<Entity>(Context.FindEntities(Aspect));
+            base.SystemAddedInternal();
+        }
+
+        internal override void SystemRemovedInternal()
+        {
+            foreach (var entity in interestedEntities.ToList())
+            {
+                EntityChanged(EntityChange.CreateEntityRemoved(entity));
+            }
+            interestedEntities = null;
+
+            base.SystemRemovedInternal();
+        }
+
         internal override void Update(float deltaTime)
         {
-            if (MissedUpdates)
-            {
-                interestedEntities.Clear();
-                foreach (var entity in Context.FindEntities(Aspect))
-                {
-                    interestedEntities.Add(entity);
-                }
-            }
-            else
-            {
-                foreach (var entityChange in EntityComponentSystem.Instance.entityManager.changesInLastFlush)
-                {
-                    switch (entityChange.TypeOfChange)
-                    {
-                        case EntityChange.ChangeType.EntityAdded:
-                        case EntityChange.ChangeType.ComponentAdded:
-                        {
-                            var entityComponentBits = EntityComponentSystem.Instance.entityManager.entityComponentBits[entityChange.Entity.Id];
-                            if (entityComponentBits.HasValue && Aspect.Cache.Interested(entityComponentBits.Value))
-                            {
-                                interestedEntities.Add(entityChange.Entity);
-                            }
-                        }
-                            break;
-                        case EntityChange.ChangeType.EntityRemoved:
-                            interestedEntities.Remove(entityChange.Entity);
-                            break;
-                        default:
-                        {
-                            var entityComponentBits = EntityComponentSystem.Instance.entityManager.entityComponentBits[entityChange.Entity.Id];
-                            if (!entityComponentBits.HasValue || Aspect.Cache.Interested(entityComponentBits.Value))
-                            {
-                                interestedEntities.Remove(entityChange.Entity);
-                            }
-                        }
-                            break;
-                    }
-                }
-            }
-
             // Start of actual processing
             // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)
             Begin();
 
-            var preprocessed = PreprocessEntities(interestedEntities);
-            ProcessEntities(preprocessed, deltaTime);
+            ProcessEntities(interestedEntities, deltaTime);
 
             End();
         }
@@ -85,10 +103,5 @@ namespace ECS
         }
 
         protected abstract void ProcessEntities(IEnumerable<Entity> entities, float deltaTime);
-
-        protected virtual IEnumerable<Entity> PreprocessEntities(IEnumerable<Entity> entities)
-        {
-            return entities;
-        }
     }
 }

@@ -53,16 +53,21 @@ namespace ECS
             this.any = any;
         }
 
-        public static Aspect Empty()
-            => new Aspect(
-                ImmutableHashSet.Create<Type>(),
-                ImmutableHashSet.Create<Type>());
-
+        /// <summary>
+        /// Interested of all of the specified types. Empty array means everything is interesting.
+        /// </summary>
+        /// <param name="types"></param>
+        /// <returns></returns>
         public static Aspect All(params Type[] types)
             => new Aspect(
                 ImmutableHashSet.Create(types),
                 ImmutableHashSet.Create<Type>());
 
+        /// <summary>
+        /// Interested of any of the specified types. Empty array means everything is interesting.
+        /// </summary>
+        /// <param name="types"></param>
+        /// <returns></returns>
         public static Aspect Any(params Type[] types)
             => new Aspect(
                 ImmutableHashSet.Create<Type>(),
@@ -96,6 +101,9 @@ namespace ECS
             public bool Interested(BigInteger bi)
                 => (all & bi) == all &&
                     (any == BigInteger.Zero || (any & bi) != BigInteger.Zero);
+
+            public bool Interested(BigInteger? bi)
+                => bi != null && Interested(bi.Value);
         }
     }
 }
