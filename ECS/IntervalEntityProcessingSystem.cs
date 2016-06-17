@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ECS
 {
@@ -10,36 +6,25 @@ namespace ECS
     {
         private float accumulator;
 
-        private float interval;
-        public float Interval
-        {
-            get
-            {
-                return interval;
-            }
-            private set
-            {
-                interval = value;
-            }
-        }
+        public float Interval { get; protected set; }
 
-        public IntervalEntityProcessingSystem(Aspect aspect, float interval)
+        protected IntervalEntityProcessingSystem(Aspect aspect, float interval)
             : base(aspect)
         {
-            this.interval = interval;
+            this.Interval = interval;
         }
 
         protected sealed override void ProcessEntities(IEnumerable<Entity> entities, float deltaTime)
         {
             accumulator += deltaTime;
 
-            while (accumulator >= interval)
+            while (accumulator >= Interval)
             {
-                accumulator -= interval;
+                accumulator -= Interval;
 
                 foreach (var item in entities)
                 {
-                    Process(item, interval);
+                    Process(item, Interval);
                 }
             }
         }

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECS;
-using Xunit;
+﻿using Xunit;
+
 namespace ECS.Tests
 {
     [Collection("ECS")]
@@ -12,7 +7,7 @@ namespace ECS.Tests
     {
         class TestIntervalEntitySystem : IntervalEntityProcessingSystem
         {
-            public int Processings = 0;
+            public int Processings;
 
             public TestIntervalEntitySystem()
                 : base(Aspect.Any(), 1f)
@@ -24,14 +19,14 @@ namespace ECS.Tests
             }
         }
 
-        EntityComponentSystem ecs;
+        readonly EntityComponentSystem ecs;
 
         public IntervalEntitySystemTests()
         {
-            this.ecs = EntityComponentSystem.Instance;
+            ecs = EntityComponentSystem.Instance;
         }
 
-        [Fact()]
+        [Fact]
         public void ProcessCorrectIntervalTest()
         {
             var sys = new TestIntervalEntitySystem();

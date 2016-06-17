@@ -1,20 +1,15 @@
-﻿using ECS;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECS
 {
     // TODO: Remove static and support passing mapper to Aspect in some way when caching
     public static class AspectMapper
     {
-        private static readonly Dictionary<Type, int> shiftForType = new Dictionary<Type, int>();
+        private static readonly Dictionary<Type, int> ShiftForType = new Dictionary<Type, int>();
 
         public static BigInteger TypesToBigInteger(params Type[] types)
         {
@@ -30,11 +25,11 @@ namespace ECS
                     $"{nameof(AspectMapper)} should only be used with {nameof(IComponent)} types");
 
                 int shift;
-                var success = shiftForType.TryGetValue(type, out shift);
+                var success = ShiftForType.TryGetValue(type, out shift);
                 if (!success)
                 {
-                    shift = shiftForType.Count;
-                    shiftForType[type] = shift;
+                    shift = ShiftForType.Count;
+                    ShiftForType[type] = shift;
                 }
                 ret |= BigInteger.One << shift;
             }

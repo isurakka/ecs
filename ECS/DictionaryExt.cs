@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ECS
 {
-    public static class IDictionaryExt
+    public static class DictionaryExt
     {
         public static TValue GetOrAddNew<TKey, TValue>(this IDictionary<TKey, TValue> self, TKey key)
             where TValue : class, new()

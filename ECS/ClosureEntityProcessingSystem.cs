@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECS
 {
@@ -17,7 +13,7 @@ namespace ECS
         public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor)
             : base(aspect)
         {
-            this.ProcessorAction = processor;
+            ProcessorAction = processor;
         }
 
         protected override void Begin()

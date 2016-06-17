@@ -1,21 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ECS
 {
     public abstract class EntityProcessingSystem : EntitySystem
     {
-        public EntityProcessingSystem(Aspect aspect)
+        protected EntityProcessingSystem(Aspect aspect)
             : base(aspect)
-        {
-
-        }
-
-        public EntityProcessingSystem(params Type[] types)
-            : this(Aspect.All(types))
         {
 
         }

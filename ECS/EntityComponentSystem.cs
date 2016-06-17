@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECS
 {
@@ -33,10 +31,6 @@ namespace ECS
         /// </summary>
         public static EntityComponentSystem Instance 
             => instance ?? (instance = new EntityComponentSystem());
-
-        static EntityComponentSystem()
-        {
-        }
 
         private EntityComponentSystem()
         {
@@ -255,9 +249,9 @@ namespace ECS
         {
             FlushChanges();
 
-            foreach (var systems in GetSystemsInLayerOrder())
+            foreach (var layerOrderSystems in GetSystemsInLayerOrder())
             {
-                foreach (var system in systems)
+                foreach (var system in layerOrderSystems)
                 {
                     system.Update(deltaTime);
                     if (system.MissedUpdates)

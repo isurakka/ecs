@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECS;
-using Xunit;
+﻿using Xunit;
+
 namespace ECS.Tests
 {
     class FlagComponent : IComponent { }
@@ -33,14 +28,14 @@ namespace ECS.Tests
     [Collection("ECS")]
     public class UsageTests
     {
-        EntityComponentSystem ecs;
+        readonly EntityComponentSystem ecs;
 
         public UsageTests()
         {
-            this.ecs = EntityComponentSystem.Instance;
+            ecs = EntityComponentSystem.Instance;
         }
 
-        [Fact()]
+        [Fact]
         public void SimpleUsage()
         {
             var entity = ecs.CreateEntity();

@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECS;
+﻿using System.Linq;
 using Xunit;
+
 namespace ECS.Tests
 {
     [Collection("ECS")]
     public class EntityTests
     {
-        EntityComponentSystem ecs;
+        readonly EntityComponentSystem ecs;
 
         public EntityTests()
         {
-            this.ecs = EntityComponentSystem.Instance;
+            ecs = EntityComponentSystem.Instance;
         }
 
-        [Fact()]
+        [Fact]
         public void RemoveTest()
         {
             var ent = ecs.CreateEntity();
@@ -28,7 +24,7 @@ namespace ECS.Tests
             Assert.False(ecs.FindEntities(Aspect.Any()).Contains(ent));
         }
 
-        [Fact()]
+        [Fact]
         public void AddComponentTest()
         {
             var ent = ecs.CreateEntity();
@@ -42,7 +38,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void RemoveComponentByTypeTest()
         {
             var ent = ecs.CreateEntity();
@@ -56,7 +52,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void RemoveComponentByInstanceTest()
         {
             var ent = ecs.CreateEntity();
@@ -71,7 +67,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void HasComponentSmall()
         {
             var ent = ecs.CreateEntity();
@@ -94,7 +90,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void GetComponentTest()
         {
             var ent = ecs.CreateEntity();
@@ -114,7 +110,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void GetComponents()
         {
             var ent = ecs.CreateEntity();
@@ -139,7 +135,7 @@ namespace ECS.Tests
             Assert.Empty(ent.Components);
         }
 
-        [Fact()]
+        [Fact]
         public void HasComponentBig()
         {
             var ent = ecs.CreateEntity();
@@ -167,8 +163,8 @@ namespace ECS.Tests
             Assert.False(ent.HasComponent(tc));
         }
 
-        [Fact()]
-        public void EqualsSameECSTest()
+        [Fact]
+        public void EqualsSameEcsTest()
         {
             var ent = ecs.CreateEntity();
             var ent2 = ecs.CreateEntity();
@@ -185,7 +181,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void GetHashCodeTest()
         {
             var ent = ecs.CreateEntity();

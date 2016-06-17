@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ECS
+﻿namespace ECS
 {
     public class SystemChange
     {
@@ -17,7 +11,7 @@ namespace ECS
         public System System { get; }
         public ChangeType TypeOfChange { get; }
 
-        protected SystemChange(System system, ChangeType typeOfChange)
+        private SystemChange(System system, ChangeType typeOfChange)
         {
             System = system;
             TypeOfChange = typeOfChange;

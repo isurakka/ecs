@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECS
 {
     public abstract class EntitySystem : System
     {
-        internal readonly Aspect Aspect;
+        protected readonly Aspect Aspect;
 
-        protected HashSet<Entity> interestedEntities;
+        protected HashSet<Entity> InterestedEntities;
 
         protected EntitySystem(Aspect aspect)
         {
             Aspect = aspect;
-            interestedEntities = new HashSet<Entity>();
+            InterestedEntities = new HashSet<Entity>();
         }
 
         /// <summary>
@@ -36,28 +34,28 @@ namespace ECS
                 case EntityChange.ChangeType.EntityAdded:
                     if (Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
                     {
-                        interestedEntities.Add(entityChange.Entity);
+                        InterestedEntities.Add(entityChange.Entity);
                         OnAdded(entityChange.Entity);
                     }
                     break;
                 case EntityChange.ChangeType.EntityRemoved:
-                    var removed = interestedEntities.Remove(entityChange.Entity);
+                    var removed = InterestedEntities.Remove(entityChange.Entity);
                     if (removed)
                     {
                         OnRemoved(entityChange.Entity);
                     }
                     break;
                 case EntityChange.ChangeType.ComponentAdded:
-                    if (!interestedEntities.Contains(entityChange.Entity) && Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
+                    if (!InterestedEntities.Contains(entityChange.Entity) && Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
                     {
-                        interestedEntities.Add(entityChange.Entity);
+                        InterestedEntities.Add(entityChange.Entity);
                         OnAdded(entityChange.Entity);
                     }
                     break;
                 case EntityChange.ChangeType.ComponentRemoved:
-                    if (interestedEntities.Contains(entityChange.Entity) && !Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
+                    if (InterestedEntities.Contains(entityChange.Entity) && !Aspect.Cache.Interested(Context.EntityComponentBits[entityChange.Entity.Id]))
                     {
-                        interestedEntities.Remove(entityChange.Entity);
+                        InterestedEntities.Remove(entityChange.Entity);
                         OnRemoved(entityChange.Entity);
                     }
                     break;
@@ -72,17 +70,17 @@ namespace ECS
 
         internal override void SystemAddedInternal()
         {
-            interestedEntities = new HashSet<Entity>(Context.FindEntities(Aspect));
+            InterestedEntities = new HashSet<Entity>(Context.FindEntities(Aspect));
             base.SystemAddedInternal();
         }
 
         internal override void SystemRemovedInternal()
         {
-            foreach (var entity in interestedEntities.ToList())
+            foreach (var entity in InterestedEntities.ToList())
             {
                 EntityChanged(EntityChange.CreateEntityRemoved(entity));
             }
-            interestedEntities = null;
+            InterestedEntities = null;
 
             base.SystemRemovedInternal();
         }
@@ -93,7 +91,7 @@ namespace ECS
             // TODO: Should begin, end and processing happen if there are no entities to process? (probably not)
             Begin();
 
-            ProcessEntities(interestedEntities, deltaTime);
+            ProcessEntities(InterestedEntities, deltaTime);
 
             End();
         }

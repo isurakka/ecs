@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using ECS;
+﻿using System.Numerics;
 using Xunit;
+
 namespace ECS.Tests
 {
     [Collection("ECS")]
@@ -24,7 +19,7 @@ namespace ECS.Tests
             c1c2 = AspectMapper.TypesToBigInteger(typeof (TestComponentOne), typeof (TestComponentTwo));
         }
 
-        [Fact()]
+        [Fact]
         public void EmptyTest()
         {
             var asp1 = Aspect.Any().Cache;
@@ -35,7 +30,7 @@ namespace ECS.Tests
             Assert.True(asp1.Interested(c1c2));
         }
 
-        [Fact()]
+        [Fact]
         public void AllTestOne()
         {
             var asp1 = Aspect.All(typeof (TestComponentOne)).Cache;
@@ -45,7 +40,7 @@ namespace ECS.Tests
             Assert.True(asp1.Interested(c1c2));
         }
 
-        [Fact()]
+        [Fact]
         public void AllTestTwo()
         {
             var asp1 = Aspect.All(typeof (TestComponentOne), typeof (TestComponentTwo)).Cache;
@@ -54,7 +49,7 @@ namespace ECS.Tests
             Assert.True(asp1.Interested(c1c2));
         }
 
-        [Fact()]
+        [Fact]
         public void AnyTestOne()
         {
             var asp1 = Aspect.Any(typeof (TestComponentOne)).Cache;
@@ -64,7 +59,7 @@ namespace ECS.Tests
             Assert.True(asp1.Interested(c1c2));
         }
 
-        [Fact()]
+        [Fact]
         public void AnyTestTwo()
         {
             var asp1 = Aspect.Any(typeof (TestComponentOne), typeof (TestComponentTwo)).Cache;

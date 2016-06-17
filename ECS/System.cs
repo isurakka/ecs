@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ECS
+﻿namespace ECS
 {
     public abstract class System
     {
-        protected internal EntityComponentSystem Context { get; internal set; }
+        protected internal EntityComponentSystem Context { protected get; set; }
 
         protected internal bool MissedUpdates { get; internal set; }
 

@@ -1,29 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECS;
-using Xunit;
+﻿using Xunit;
+
 namespace ECS.Tests
 {
     [Collection("ECS")]
     public class EntitySystemTests
     {
-        EntityComponentSystem ecs;
+        readonly EntityComponentSystem ecs;
 
         public EntitySystemTests()
         {
-            this.ecs = EntityComponentSystem.Instance;
+            ecs = EntityComponentSystem.Instance;
         }
 
-        [Fact()]
+        [Fact]
         public void ProcessCorrectEntitiesTest()
         {
             int processings = 0;
             var sys = new ClosureEntityProcessingSystem(Aspect.Any(), null)
             {
-                ProcessorAction = (e, dt) => processings++,
+                ProcessorAction = (e, dt) => processings++
             };
             ecs.AddSystem(sys);
 
@@ -69,20 +64,20 @@ namespace ECS.Tests
             Assert.Equal(4, processings);
         }
 
-        [Fact()]
+        [Fact]
         public void ProcessCorrectEntitiesWithComponentsTest()
         {
             int processings1 = 0;
             var sys1 = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
-                ProcessorAction = (e, dt) => processings1++,
+                ProcessorAction = (e, dt) => processings1++
             };
             ecs.AddSystem(sys1);
 
             int processings2 = 0;
             var sys2 = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentTwo)), null)
             {
-                ProcessorAction = (e, dt) => processings2++,
+                ProcessorAction = (e, dt) => processings2++
             };
             ecs.AddSystem(sys2);
 
@@ -109,13 +104,13 @@ namespace ECS.Tests
             Assert.Equal(1, processings2);
         }
 
-        [Fact()]
+        [Fact]
         public void OnAddedTest()
         {
             int onAdded = 0;
             var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
-                OnAddedAction = (e) => onAdded++,
+                OnAddedAction = e => onAdded++
             };
             ecs.AddSystem(sys);
             ecs.Update(1f);
@@ -126,13 +121,13 @@ namespace ECS.Tests
             Assert.Equal(0, onAdded);
 
             ent.AddComponent(new TestComponentOne());
-            sys.OnAddedAction = (e) => { onAdded++; Assert.Equal(ent, e); };
+            sys.OnAddedAction = e => { onAdded++; Assert.Equal(ent, e); };
             ecs.Update(1f);
             Assert.Equal(1, onAdded);
 
             var ent2 = ecs.CreateEntity();
             ent2.AddComponent(new TestComponentOne());
-            sys.OnAddedAction = (e) => { onAdded++; Assert.Equal(ent2, e); };
+            sys.OnAddedAction = e => { onAdded++; Assert.Equal(ent2, e); };
             ecs.Update(1f);
             Assert.Equal(2, onAdded);
 
@@ -143,13 +138,13 @@ namespace ECS.Tests
             Assert.Equal(2, onAdded);
         }
 
-        [Fact()]
+        [Fact]
         public void OnRemovedComponentOnlyTest()
         {
             int onRemoved = 0;
             var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
-                OnRemovedAction = (e) => onRemoved++,
+                OnRemovedAction = e => onRemoved++
             };
             ecs.AddSystem(sys);
             ecs.Update(1f);
@@ -166,12 +161,12 @@ namespace ECS.Tests
             Assert.Equal(0, onRemoved);
 
             ent.Remove();
-            sys.OnRemovedAction = (e) => { onRemoved++; Assert.Equal(ent, e); };
+            sys.OnRemovedAction = e => { onRemoved++; Assert.Equal(ent, e); };
             ecs.Update(1f);
             Assert.Equal(1, onRemoved);
 
             ent2.Remove();
-            sys.OnRemovedAction = (e) => { onRemoved++; Assert.Equal(ent2, e); };
+            sys.OnRemovedAction = e => { onRemoved++; Assert.Equal(ent2, e); };
             ecs.Update(1f);
             Assert.Equal(2, onRemoved);
 
@@ -180,13 +175,13 @@ namespace ECS.Tests
             Assert.Equal(2, onRemoved);
         }
 
-        [Fact()]
+        [Fact]
         public void OnRemovedWholeEntityTest()
         {
             int onRemoved = 0;
             var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
-                OnRemovedAction = (e) => onRemoved++,
+                OnRemovedAction = e => onRemoved++
             };
             ecs.AddSystem(sys);
             var ent = ecs.CreateEntity();
@@ -195,14 +190,14 @@ namespace ECS.Tests
             Assert.Equal(0, onRemoved);
 
             ent.Remove();
-            sys.OnRemovedAction = (e) => { onRemoved++; Assert.Equal(ent, e); };
+            sys.OnRemovedAction = e => { onRemoved++; Assert.Equal(ent, e); };
             var ent2 = ecs.CreateEntity();
             ent2.AddComponent(new TestComponentOne());
             ecs.Update(1f);
             Assert.Equal(1, onRemoved);
 
             ent2.Remove();
-            sys.OnRemovedAction = (e) => { onRemoved++; Assert.Equal(ent2, e); };
+            sys.OnRemovedAction = e => { onRemoved++; Assert.Equal(ent2, e); };
             ecs.Update(1f);
             Assert.Equal(2, onRemoved);
 
@@ -210,7 +205,7 @@ namespace ECS.Tests
             ecs.Update(1f);
         }
 
-        [Fact()]
+        [Fact]
         public void BeginEndTest()
         {
             int begin = 0;
@@ -218,7 +213,7 @@ namespace ECS.Tests
             var sys = new ClosureEntityProcessingSystem(Aspect.All(typeof(TestComponentOne)), null)
             {
                 BeginAction = () => begin++,
-                EndAction = () => end++,
+                EndAction = () => end++
             };
             ecs.AddSystem(sys);
             
@@ -240,7 +235,7 @@ namespace ECS.Tests
             Assert.Equal(2, end);
         }
 
-        [Fact()]
+        [Fact]
         public void SystemProcessOrderTest()
         {
             var pro1 = false;
