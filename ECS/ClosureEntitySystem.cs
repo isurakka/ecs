@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ECS
 {
-    public class ClosureEntityProcessingSystem : EntityProcessingSystem
+    public class ClosureEntitySystem : EntitySystem
     {
-        public Action<Entity, float> ProcessorAction;
+        public Action<IEnumerable<Entity>, float> ProcessorAction;
         public Action BeginAction;
         public Action EndAction;
         public Action<Entity> OnAddedAction;
         public Action<Entity> OnRemovedAction;
 
-        public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor = null)
+        public ClosureEntitySystem(Aspect aspect, Action<IEnumerable<Entity>, float> processor = null)
             : base(aspect)
         {
             ProcessorAction = processor;
@@ -36,9 +37,9 @@ namespace ECS
             OnRemovedAction?.Invoke(entity);
         }
 
-        protected override void Process(Entity entity, float deltaTime)
+        protected override void ProcessEntities(IEnumerable<Entity> entities, float deltaTime)
         {
-            ProcessorAction?.Invoke(entity, deltaTime);
+            ProcessorAction?.Invoke(entities, deltaTime);
         }
     }
 }

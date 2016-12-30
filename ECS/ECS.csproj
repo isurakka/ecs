@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClosureEntitySystem.cs" />
     <Compile Include="EntityChange.cs" />
     <Compile Include="Aspect.cs" />
     <Compile Include="Entity.cs" />
