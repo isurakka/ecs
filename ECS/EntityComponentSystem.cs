@@ -168,11 +168,25 @@ namespace ECS
             return (T)components[typeof(T)][entity.Id];
         }
 
+        public IComponent GetComponent(Entity entity, Type type)
+        {
+            if (!components.ContainsKey(type)) return null;
+
+            return components[type][entity.Id];
+        }
+
         public bool HasComponent<T>(Entity entity) where T : IComponent
         {
             if (!components.ContainsKey(typeof(T)) || entity.Id >= componentArraySize) return false;
 
             return components[typeof(T)][entity.Id] != null;
+        }
+
+        public bool HasComponent(Entity entity, Type type)
+        {
+            if (!components.ContainsKey(type) || entity.Id >= componentArraySize) return false;
+
+            return components[type][entity.Id] != null;
         }
 
         public bool HasComponent(Entity entity, IComponent component)

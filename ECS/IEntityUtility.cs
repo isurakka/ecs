@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ECS
 {
@@ -10,7 +11,9 @@ namespace ECS
         void RemoveComponent(Entity entity, IComponent component);
         IEnumerable<IComponent> GetComponents(Entity entity);
         T GetComponent<T>(Entity entity) where T : IComponent;
+        IComponent GetComponent(Entity entity, Type type);
         bool HasComponent<T>(Entity entity) where T : IComponent;
+        bool HasComponent(Entity entity, Type type);
         bool HasComponent(Entity entity, IComponent component);
         void RemoveEntity(Entity entity);
     }

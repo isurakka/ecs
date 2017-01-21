@@ -34,11 +34,17 @@ namespace ECS
         public bool HasComponent<T>() where T: IComponent
             => entityUtility.HasComponent<T>(this);
 
+        public bool HasComponent(Type type)
+            => entityUtility.HasComponent(this, type);
+
         public bool HasComponent(IComponent component)
             => entityUtility.HasComponent(this, component);
 
         public T GetComponent<T>() where T : IComponent 
             => entityUtility.GetComponent<T>(this);
+
+        public IComponent GetComponent(Type type)
+            => entityUtility.GetComponent(this, type);
 
         public bool Equals(Entity other)
         {
