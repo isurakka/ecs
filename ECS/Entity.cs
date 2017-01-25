@@ -7,44 +7,44 @@ namespace ECS
     {
         public int Id { get; }
 
-        private readonly IEntityUtility entityUtility;
+        private readonly EntityComponentSystem ecs;
 
-        public IEnumerable<IComponent> Components => entityUtility.GetComponents(this);
+        public IEnumerable<IComponent> Components => ecs.GetComponents(this);
 
-        internal Entity(int id, IEntityUtility entityUtility)
+        internal Entity(int id, EntityComponentSystem ecs)
         {
             Id = id;
-            this.entityUtility = entityUtility;
+            this.ecs = ecs;
         }
 
-        public void Remove() => entityUtility.RemoveEntity(this);
+        public void Remove() => ecs.RemoveEntity(this);
 
         public void AddComponent<T>(T component) where T : IComponent
-            => entityUtility.AddComponent(this, component);
+            => ecs.AddComponent(this, component);
 
         public T AddComponent<T>() where T : IComponent, new() 
-            => entityUtility.AddComponent<T>(this);
+            => ecs.AddComponent<T>(this);
 
         public void RemoveComponent<T>(T component) where T: IComponent
-            => entityUtility.RemoveComponent(this, component);
+            => ecs.RemoveComponent(this, component);
 
         public void RemoveComponent<T>() where T: IComponent
-            => entityUtility.RemoveComponent<T>(this);
+            => ecs.RemoveComponent<T>(this);
 
         public bool HasComponent<T>() where T: IComponent
-            => entityUtility.HasComponent<T>(this);
+            => ecs.HasComponent<T>(this);
 
         public bool HasComponent(Type type)
-            => entityUtility.HasComponent(this, type);
+            => ecs.HasComponent(this, type);
 
         public bool HasComponent(IComponent component)
-            => entityUtility.HasComponent(this, component);
+            => ecs.HasComponent(this, component);
 
         public T GetComponent<T>() where T : IComponent 
-            => entityUtility.GetComponent<T>(this);
+            => ecs.GetComponent<T>(this);
 
         public IComponent GetComponent(Type type)
-            => entityUtility.GetComponent(this, type);
+            => ecs.GetComponent(this, type);
 
         public bool Equals(Entity other)
         {

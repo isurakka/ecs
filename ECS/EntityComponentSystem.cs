@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace ECS
 {
-    public class EntityComponentSystem : IEntityUtility
+    public class EntityComponentSystem
     {
         private int nextEntityId;
         private int componentArraySize;

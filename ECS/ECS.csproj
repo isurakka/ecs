@@ -52,7 +52,6 @@
     <Compile Include="EntityComponentSystem.cs" />
     <Compile Include="EntityProcessingSystem.cs" />
     <Compile Include="DictionaryExt.cs" />
-    <Compile Include="IEntityUtility.cs" />
     <Compile Include="IntervalEntityProcessingSystem.cs" />
     <Compile Include="EntitySystem.cs" />
     <Compile Include="IComponent.cs" />
