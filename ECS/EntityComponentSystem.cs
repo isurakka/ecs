@@ -204,8 +204,7 @@ namespace ECS
                 if (EntityComponentBits[i] == null) continue;
 
                 var aspectHash = aspect.GetHashCode();
-                bool interested;
-                if (!entityInterestedCache[i].TryGetValue(aspectHash, out interested))
+                if (!entityInterestedCache[i].TryGetValue(aspectHash, out bool interested))
                 {
                     // TODO: Don't cache aspect here
                     interested = aspect.Cache.Interested(EntityComponentBits[i].Value);
@@ -360,8 +359,7 @@ namespace ECS
 
         private IEnumerable<System> GetSystems(int layer)
         {
-            List<System> ret;
-            if (!systems.TryGetValue(layer, out ret))
+            if (!systems.TryGetValue(layer, out var ret))
             {
                 return Enumerable.Empty<System>();
             }
