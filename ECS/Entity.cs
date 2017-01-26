@@ -9,6 +9,9 @@ namespace ECS
 
         private readonly EntityComponentSystem ecs;
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public IEnumerable<IComponent> Components => ecs.GetComponents(this);
 
         internal Entity(int id, EntityComponentSystem ecs)
@@ -17,32 +20,62 @@ namespace ECS
             this.ecs = ecs;
         }
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public void Remove() => ecs.RemoveEntity(this);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public void AddComponent<T>(T component) where T : IComponent
             => ecs.AddComponent(this, component);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public T AddComponent<T>() where T : IComponent, new() 
             => ecs.AddComponent<T>(this);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public void RemoveComponent<T>(T component) where T: IComponent
             => ecs.RemoveComponent(this, component);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public void RemoveComponent<T>() where T: IComponent
             => ecs.RemoveComponent<T>(this);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public bool HasComponent<T>() where T: IComponent
             => ecs.HasComponent<T>(this);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public bool HasComponent(Type type)
             => ecs.HasComponent(this, type);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public bool HasComponent(IComponent component)
             => ecs.HasComponent(this, component);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public T GetComponent<T>() where T : IComponent 
             => ecs.GetComponent<T>(this);
 
+        /// <summary>
+        /// Thread safe
+        /// </summary>
         public IComponent GetComponent(Type type)
             => ecs.GetComponent(this, type);
 
@@ -80,5 +113,11 @@ namespace ECS
         }
 
         public override int GetHashCode() => Id.GetHashCode();
+    }
+
+    public enum EntityExecution
+    {
+        Synchronous,
+        Asynchronous
     }
 }

@@ -23,10 +23,7 @@ namespace ECS
             {
                 Debug.Assert(typeof(IComponent).IsAssignableFrom(type),
                     $"{nameof(AspectMapper)} should only be used with {nameof(IComponent)} types");
-
-                int shift;
-                var success = ShiftForType.TryGetValue(type, out shift);
-                if (!success)
+                if (!ShiftForType.TryGetValue(type, out int shift))
                 {
                     shift = ShiftForType.Count;
                     ShiftForType[type] = shift;

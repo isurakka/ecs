@@ -10,8 +10,8 @@ namespace ECS
         public Action<Entity> OnAddedAction;
         public Action<Entity> OnRemovedAction;
 
-        public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor = null)
-            : base(aspect)
+        public ClosureEntityProcessingSystem(Aspect aspect, Action<Entity, float> processor = null, EntityExecution execution = EntityExecution.Synchronous)
+            : base(aspect, execution)
         {
             ProcessorAction = processor;
         }
