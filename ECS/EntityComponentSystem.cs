@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Nito.AsyncEx;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,20 +14,21 @@ namespace ECS
         private int nextEntityId;
         private int componentArraySize;
 
+        // component related
         // key = component type, value = array of components where key is entity id
-        private readonly Dictionary<Type, IComponent[]> components;
+        private readonly Dictionary<Type, IComponent[]> components = new Dictionary<Type, IComponent[]>();
+        private readonly Dictionary<Type, AsyncReaderWriterLock> componentLocks = new Dictionary<Type, AsyncReaderWriterLock>();
 
         // entity related
         // array of component bitsets where key is entity id
         // null means that entity doesn't exist
-        internal BigInteger?[] EntityComponentBits;
-        private Entity[] entityCache;
-        private Dictionary<int, bool>[] entityInterestedCache;
-        private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges;
+        internal BigInteger?[] EntityComponentBits = new BigInteger?[0];
+        private Entity[] entityCache = new Entity[0];
+        private Dictionary<int, bool>[] entityInterestedCache = new Dictionary<int, bool>[0];
+        private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
 
         // system related
-        private readonly Dictionary<int, Queue<SystemChange>> pendingSystemChanges;
-        private readonly SortedDictionary<int, Dictionary<SystemExecution, List<System>>> systems;
+        private readonly Dictionary<int, Queue<SystemChange>> pendingSystemChanges = new Dictionary<int, Queue<SystemChange>>();
 
         private static EntityComponentSystem instance;
         /// <summary>
@@ -34,17 +37,7 @@ namespace ECS
         public static EntityComponentSystem Instance 
             => instance ?? (instance = new EntityComponentSystem());
 
-        private EntityComponentSystem()
-        {
-            components = new Dictionary<Type, IComponent[]>();
-            EntityComponentBits = new BigInteger?[0];
-            entityCache = new Entity[0];
-            entityInterestedCache = new Dictionary<int, bool>[0];
-            pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
-
-            pendingSystemChanges = new Dictionary<int, Queue<SystemChange>>();
-            systems = new SortedDictionary<int, Dictionary<SystemExecution, List<System>>>();
-        }
+        private EntityComponentSystem() {  }
 
         /// <summary>
         /// Thread safe
@@ -181,6 +174,22 @@ namespace ECS
             return components.Values
                 .Select(arr => arr[entity.Id])
                 .Where(c => c != null);
+        }
+
+        public async Task<ComponentAccess<IEnumerable<T>>> GetComponents<T>(Read<T> read0)
+            where T: IComponent
+        {
+            await componentAcquire.WaitAsync();
+
+            var read0Disposable = await componentLocks[typeof(T)].ReaderLockAsync();
+
+            componentAcquire.Release();
+
+            return new ComponentAccess<IEnumerable<T>>
+            {
+                Acquires = new List<IDisposable> { read0Disposable },
+                Components = components[typeof(T)].Cast<T>(),
+            };
         }
 
         /// <summary>
