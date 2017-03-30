@@ -20,20 +20,13 @@ namespace ECS
         }
     }
 
-    public abstract class ReadOrWrite
+    public sealed class Write
     {
-
+        private Write() {  }
     }
 
-    public class Write<T> : Read<T>
-        where T : IComponent
+    public abstract class Read
     {
-
-    }
-
-    public class Read<T> : ReadOrWrite
-        where T: IComponent
-    {
-
+        private Read() { }
     }
 }

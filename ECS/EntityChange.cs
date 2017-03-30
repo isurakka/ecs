@@ -13,14 +13,14 @@ namespace ECS
         }
 
         public Entity Entity { get; }
-        public IComponent RelevantComponent { get; }
+        public object RelevantComponent { get; }
 
         private Type componentType;
         public Type ComponentType => componentType ?? (componentType = RelevantComponent?.GetType());
 
         public ChangeType TypeOfChange { get; }
 
-        private EntityChange(Entity entity, IComponent relevantComponent, Type componentType, ChangeType typeOfChange)
+        private EntityChange(Entity entity, object relevantComponent, Type componentType, ChangeType typeOfChange)
         {
             Entity = entity;
             RelevantComponent = relevantComponent;
@@ -34,10 +34,10 @@ namespace ECS
         public static EntityChange CreateEntityRemoved(Entity entity)
             => new EntityChange(entity, null, null, ChangeType.EntityRemoved);
 
-        public static EntityChange CreateComponentAdded(Entity entity, IComponent component, Type componentType)
+        public static EntityChange CreateComponentAdded(Entity entity, object component, Type componentType)
             => new EntityChange(entity, component, componentType, ChangeType.ComponentAdded);
 
-        public static EntityChange CreateComponentRemoved(Entity entity, IComponent component, Type componentType)
+        public static EntityChange CreateComponentRemoved(Entity entity, object component, Type componentType)
             => new EntityChange(entity, component, componentType, ChangeType.ComponentRemoved);
     }
 }

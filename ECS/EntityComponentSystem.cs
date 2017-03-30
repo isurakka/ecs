@@ -16,8 +16,10 @@ namespace ECS
 
         // component related
         // key = component type, value = array of components where key is entity id
-        private readonly Dictionary<Type, IComponent[]> components = new Dictionary<Type, IComponent[]>();
+        private readonly Dictionary<Type, object[]> components = new Dictionary<Type, object[]>();
         private readonly Dictionary<Type, AsyncReaderWriterLock> componentLocks = new Dictionary<Type, AsyncReaderWriterLock>();
+        private readonly SemaphoreSlim componentLockAcquirer = new SemaphoreSlim(0, 1);
+        private readonly AsyncManualResetEvent componentLocksFreed = new AsyncManualResetEvent(true); 
 
         // entity related
         // array of component bitsets where key is entity id
@@ -26,10 +28,7 @@ namespace ECS
         private Entity[] entityCache = new Entity[0];
         private Dictionary<int, bool>[] entityInterestedCache = new Dictionary<int, bool>[0];
         private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
-
-        // system related
-        private readonly Dictionary<int, Queue<SystemChange>> pendingSystemChanges = new Dictionary<int, Queue<SystemChange>>();
-
+        
         private static EntityComponentSystem instance;
         /// <summary>
         /// Get the singleton instance. This will probably not be singleton in the future.
@@ -103,7 +102,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void AddComponent<T>(Entity entity, T component) where T : IComponent
+        public void AddComponent<T>(Entity entity, T component)
         {
             pendingEntityChanges.Value.Enqueue(EntityChange.CreateComponentAdded(entity, component, typeof(T)));
         }
@@ -111,7 +110,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public T AddComponent<T>(Entity entity) where T : IComponent, new()
+        public T AddComponent<T>(Entity entity) where T : new()
         {
             var component = new T();
             pendingEntityChanges.Value.Enqueue(EntityChange.CreateComponentAdded(entity, component, typeof(T)));
@@ -126,7 +125,8 @@ namespace ECS
 
             if (!components.ContainsKey(type))
             {
-                components.Add(type, new IComponent[componentArraySize]);
+                components.Add(type, new object[componentArraySize]);
+                componentLocks.Add(type, new AsyncReaderWriterLock());
             }
             // only check this if this wasn't first component of this type to be added
             else if (components[type][id] != null)
@@ -144,7 +144,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void RemoveComponent<T>(Entity entity) where T : IComponent
+        public void RemoveComponent<T>(Entity entity)
         {
             pendingEntityChanges.Value.Enqueue(EntityChange.CreateComponentRemoved(entity, null, typeof(T)));
         }
@@ -152,7 +152,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void RemoveComponent(Entity entity, IComponent component)
+        public void RemoveComponent(Entity entity, object component)
         {
             pendingEntityChanges.Value.Enqueue(EntityChange.CreateComponentRemoved(entity, component, null));
         }
@@ -169,33 +169,44 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public IEnumerable<IComponent> GetComponents(Entity entity)
+        public IEnumerable<object> GetComponents(Entity entity)
         {
             return components.Values
                 .Select(arr => arr[entity.Id])
                 .Where(c => c != null);
         }
 
-        public async Task<ComponentAccess<IEnumerable<T>>> GetComponents<T>(Read<T> read0)
-            where T: IComponent
+        public async Task<ComponentAccess<IEnumerable<TRead0>>> GetComponents<TRead, TRead0>()
+            where TRead: Read
         {
-            await componentAcquire.WaitAsync();
+            start:
+            await componentLocksFreed.WaitAsync().ConfigureAwait(false);
+            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
 
-            var read0Disposable = await componentLocks[typeof(T)].ReaderLockAsync();
+            var cts = new CancellationTokenSource();
 
-            componentAcquire.Release();
+            var read0LockTask = componentLocks[typeof(TRead0)].ReaderLockAsync(cts.Token).ConfigureAwait(false);
 
-            return new ComponentAccess<IEnumerable<T>>
+            if (!read0LockTask.GetAwaiter().IsCompleted)
             {
-                Acquires = new List<IDisposable> { read0Disposable },
-                Components = components[typeof(T)].Cast<T>(),
+                cts.Cancel();
+                componentLockAcquirer.Release();
+                goto start;
+            }
+
+            componentLockAcquirer.Release();
+
+            return new ComponentAccess<IEnumerable<TRead0>>
+            {
+                Acquires = new List<IDisposable> { await read0LockTask },
+                Components = components[typeof(TRead0)].Cast<TRead0>(),
             };
         }
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public T GetComponent<T>(Entity entity) where T : IComponent
+        public T GetComponent<T>(Entity entity)
         {
             if (!components.ContainsKey(typeof(T))) return default(T);
 
@@ -205,7 +216,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public IComponent GetComponent(Entity entity, Type type)
+        public object GetComponent(Entity entity, Type type)
         {
             if (!components.ContainsKey(type)) return null;
 
@@ -215,7 +226,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public bool HasComponent<T>(Entity entity) where T : IComponent
+        public bool HasComponent<T>(Entity entity)
         {
             if (!components.ContainsKey(typeof(T)) || entity.Id >= componentArraySize) return false;
 
@@ -235,7 +246,7 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public bool HasComponent(Entity entity, IComponent component)
+        public bool HasComponent(Entity entity, object component)
         {
             if (!components.ContainsKey(component.GetType())) return false;
 
@@ -310,151 +321,9 @@ namespace ECS
             return entityCache[id];
         }
 
-        public void Update(float deltaTime)
-        {
-            FlushChanges();
-
-            foreach (var layerOrderSystems in GetSystemsInLayerOrder())
-            {
-                ExecuteUpdate(layerOrderSystems, deltaTime);
-
-                FlushChanges();
-            }
-        }
-
-        public void UpdateSpecific(float deltaTime, int layer)
-        {
-            FlushChanges();
-
-            var systems = GetSystems(layer);
-            if (systems == null) return;
-            ExecuteUpdate(systems, deltaTime);
-
-            FlushChanges();
-        }
-
-        private void ExecuteUpdate(Dictionary<SystemExecution, List<System>> systems, float deltaTime)
-        {
-            foreach (var system in systems[SystemExecution.Synchronous])
-            {
-                system.Update(deltaTime);
-            }
-
-            Parallel.ForEach(systems[SystemExecution.Asynchronous], system =>
-            {
-                system.Update(deltaTime);
-            });
-        }
-
         public void FlushChanges()
         {
             var entityChanges = FlushPending();
-            FlushPendingChanges();
-
-            foreach (var entityChange in entityChanges)
-            {
-                foreach (var layerPair in systems)
-                {
-                    foreach (var systemsPair in layerPair.Value)
-                    {
-                        foreach (var system in systemsPair.Value)
-                        {
-                            // TODO: This looping and casting may be too inefficient
-                            var entitySystem = system as EntitySystem;
-
-                            entitySystem?.EntityChanged(entityChange);
-                        }
-                    }
-                }
-            }
-        }
-
-        public void AddSystem(System system, int layer = 0, SystemExecution execution = SystemExecution.Synchronous) =>
-            pendingSystemChanges.GetOrAddNew(layer).Enqueue(SystemChange.CreateSystemAdded(system, execution));
-
-        public System AddSystem<T>(int layer = 0, SystemExecution execution = SystemExecution.Synchronous) where T : System, new()
-        {
-            var system = new T();
-            pendingSystemChanges.GetOrAddNew(layer).Enqueue(SystemChange.CreateSystemAdded(system, execution));
-            return system;
-        }
-
-        public void RemoveSystem(System system, int layer) =>
-            pendingSystemChanges.GetOrAddNew(layer).Enqueue(SystemChange.CreateSystemRemoved(system));
-
-        private void FlushPendingChanges()
-        {
-            foreach (var pair in pendingSystemChanges)
-            {
-                var layer = pair.Key;
-                var value = pair.Value;
-
-                foreach (var change in value)
-                {
-                    var system = change.System;
-                    if (change.TypeOfChange == SystemChange.ChangeType.Added)
-                    {
-                        system.Context = this;
-                        systems.GetOrAddNew(layer).GetOrAddNew(change.Execution).Add(system);
-                        system.SystemAddedInternal();
-                    }
-                    else
-                    {
-                        system.Context = null;
-                        var systemsInLayer = systems[layer];
-                        foreach (var list in systemsInLayer.Values)
-                        {
-                            var index = list.IndexOf(system);
-                            if (index == -1) continue;
-                            list.RemoveAt(index);
-                            break;
-                        }
-                        system.SystemRemovedInternal();
-
-                        if (systemsInLayer.Count <= 0)
-                        {
-                            systems.Remove(layer);
-                        }
-                    }
-                }
-            }
-
-            pendingSystemChanges.Clear();
-        }
-
-        private Dictionary<SystemExecution, List<System>> GetSystems(int layer)
-        {
-            if (!systems.TryGetValue(layer, out var ret))
-            {
-                return null;
-            }
-
-            return ret;
-        }
-
-        private KeyValuePair<int, Dictionary<SystemExecution, List<System>>>? NextSystemsInclusive(int layer)
-        {
-            var first = systems.FirstOrDefault(pair => pair.Key >= layer);
-            return first.Value == null ? null : new KeyValuePair<int, Dictionary<SystemExecution, List<System>>>?(first);
-        }
-
-        private IEnumerable<Dictionary<SystemExecution, List<System>>> GetSystemsInLayerOrder()
-        {
-            KeyValuePair<int, Dictionary<SystemExecution, List<System>>>? nextSystems;
-            var nextKey = int.MinValue;
-            do
-            {
-                nextSystems = NextSystemsInclusive(nextKey);
-                if (nextSystems == null) continue;
-
-                yield return nextSystems.Value.Value;
-
-                if (nextKey == int.MaxValue)
-                {
-                    yield break;
-                }
-                nextKey = nextSystems.Value.Key + 1;
-            } while (nextSystems != null);
         }
     }
 }

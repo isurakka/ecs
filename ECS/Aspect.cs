@@ -21,8 +21,8 @@ namespace ECS
             var ret = BigInteger.Zero;
             foreach (var type in types)
             {
-                Debug.Assert(typeof(IComponent).IsAssignableFrom(type),
-                    $"{nameof(AspectMapper)} should only be used with {nameof(IComponent)} types");
+                Debug.Assert(typeof(object).IsAssignableFrom(type),
+                    $"{nameof(AspectMapper)} should only be used with object types");
                 if (!ShiftForType.TryGetValue(type, out int shift))
                 {
                     shift = ShiftForType.Count;

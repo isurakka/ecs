@@ -97,9 +97,7 @@
     <Compile Include="Entity.cs" />
     <Compile Include="EntityComponentSystem.cs" />
     <Compile Include="DictionaryExt.cs" />
-    <Compile Include="IComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SystemChange.cs" />
     <Compile Include="TaskStuff.cs" />
   </ItemGroup>
   <ItemGroup>

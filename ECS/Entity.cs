@@ -9,11 +9,6 @@ namespace ECS
 
         private readonly EntityComponentSystem ecs;
 
-        /// <summary>
-        /// Thread safe
-        /// </summary>
-        public IEnumerable<IComponent> Components => ecs.GetComponents(this);
-
         internal Entity(int id, EntityComponentSystem ecs)
         {
             Id = id;
@@ -28,31 +23,31 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void AddComponent<T>(T component) where T : IComponent
+        public void AddComponent<T>(T component)
             => ecs.AddComponent(this, component);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public T AddComponent<T>() where T : IComponent, new() 
+        public T AddComponent<T>() where T : new() 
             => ecs.AddComponent<T>(this);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void RemoveComponent<T>(T component) where T: IComponent
+        public void RemoveComponent<T>(T component)
             => ecs.RemoveComponent(this, component);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public void RemoveComponent<T>() where T: IComponent
+        public void RemoveComponent<T>()
             => ecs.RemoveComponent<T>(this);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public bool HasComponent<T>() where T: IComponent
+        public bool HasComponent<T>()
             => ecs.HasComponent<T>(this);
 
         /// <summary>
@@ -64,19 +59,19 @@ namespace ECS
         /// <summary>
         /// Thread safe
         /// </summary>
-        public bool HasComponent(IComponent component)
+        public bool HasComponent(object component)
             => ecs.HasComponent(this, component);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public T GetComponent<T>() where T : IComponent 
+        public T GetComponent<T>()
             => ecs.GetComponent<T>(this);
 
         /// <summary>
         /// Thread safe
         /// </summary>
-        public IComponent GetComponent(Type type)
+        public object GetComponent(Type type)
             => ecs.GetComponent(this, type);
 
         public bool Equals(Entity other)
