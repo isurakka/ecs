@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ECS
 {
-    public class EntityComponentSystem
+    public partial class EntityComponentSystem
     {
         private int nextEntityId;
         private int componentArraySize;
@@ -20,7 +20,7 @@ namespace ECS
         private readonly Dictionary<Type, AsyncReaderWriterLock> componentLocks = new Dictionary<Type, AsyncReaderWriterLock>();
         private readonly SemaphoreSlim componentLockAcquirer = new SemaphoreSlim(0, 1);
         private readonly AsyncManualResetEvent componentLocksFreed = new AsyncManualResetEvent(true); 
-
+        
         // entity related
         // array of component bitsets where key is entity id
         // null means that entity doesn't exist
