@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reactive.Subjects;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace ECS
 {
@@ -14,12 +16,15 @@ namespace ECS
         private int nextEntityId;
         private int componentArraySize;
 
+        private readonly ComponentMapper componentMapper = new ComponentMapper();
+
         // component related
         // key = component type, value = array of components where key is entity id
         private readonly Dictionary<Type, object[]> components = new Dictionary<Type, object[]>();
+        // key = component type, value = readwritelock for a component
         private readonly Dictionary<Type, AsyncReaderWriterLock> componentLocks = new Dictionary<Type, AsyncReaderWriterLock>();
+        // lock to start using components
         private readonly SemaphoreSlim componentLockAcquirer = new SemaphoreSlim(0, 1);
-        private readonly AsyncManualResetEvent componentLocksFreed = new AsyncManualResetEvent(true); 
 
         // entity related
         // array of component bitsets where key is entity id
@@ -137,7 +142,7 @@ namespace ECS
             }
 
             components[type][id] = component;
-            EntityComponentBits[id] |= AspectMapper.TypesToBigInteger(type);
+            EntityComponentBits[id] |= componentMapper.TypesToBigInteger(type);
             entityInterestedCache[id].Clear();
         }
 
@@ -162,7 +167,7 @@ namespace ECS
             var id = entityChange.Entity.Id;
             var type = entityChange.ComponentType;
             components[type][id] = null;
-            EntityComponentBits[id] &= ~AspectMapper.TypesToBigInteger(type);
+            EntityComponentBits[id] &= ~componentMapper.TypesToBigInteger(type);
             entityInterestedCache[id].Clear();
         }
 
@@ -176,30 +181,49 @@ namespace ECS
                 .Where(c => c != null);
         }
 
-        public async Task<ComponentAccess<IEnumerable<TRead0>>> GetComponents<TRead, TRead0>()
-            where TRead: Read
+        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TAccessType0, TComponent0>()
+            where TAccessType0: Read
         {
             start:
-            await componentLocksFreed.WaitAsync().ConfigureAwait(false);
+            //await componentLocksFreed.WaitAsync().ConfigureAwait(false);
             await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
 
-            var cts = new CancellationTokenSource();
-
-            var read0LockTask = componentLocks[typeof(TRead0)].ReaderLockAsync(cts.Token).ConfigureAwait(false);
-
-            if (!read0LockTask.GetAwaiter().IsCompleted)
+            var read0Lock = componentLocks[typeof(TComponent0)].TryReaderLock();
+            if (read0Lock == null)
             {
-                cts.Cancel();
                 componentLockAcquirer.Release();
                 goto start;
             }
 
             componentLockAcquirer.Release();
 
-            return new ComponentAccess<IEnumerable<TRead0>>
+            return new ComponentAccess<IEnumerable<TComponent0>>
             {
-                Acquires = new List<IDisposable> { await read0LockTask },
-                Components = components[typeof(TRead0)].Cast<TRead0>(),
+                Acquires = new List<IDisposable> { read0Lock },
+                Components = components[typeof(TComponent0)].Cast<TComponent0>(),
+            };
+        }
+
+        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TAccessType0, TComponent0>()
+            where TAccessType0 : Write
+        {
+            start:
+            //await componentLocksFreed.WaitAsync().ConfigureAwait(false);
+            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
+
+            var read0Lock = componentLocks[typeof(TComponent0)].TryReaderLock();
+            if (read0Lock == null)
+            {
+                componentLockAcquirer.Release();
+                goto start;
+            }
+
+            componentLockAcquirer.Release();
+
+            return new ComponentAccess<IEnumerable<TComponent0>>
+            {
+                Acquires = new List<IDisposable> { read0Lock },
+                Components = components[typeof(TComponent0)].Cast<TComponent0>(),
             };
         }
 
@@ -253,6 +277,7 @@ namespace ECS
             return components[component.GetType()][entity.Id] != null;
         }
 
+        /*
         private IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
         {
             var ret = new List<Entity>();
@@ -275,6 +300,7 @@ namespace ECS
             }
             return ret;
         }
+        */
 
         private IEnumerable<EntityChange> FlushPending()
         {
@@ -311,7 +337,7 @@ namespace ECS
         }
 
         // TODO: Is this needed and is this right place for this method?
-        public IEnumerable<Entity> FindEntities(Aspect aspect) => GetEntitiesForAspect(aspect);
+        //public IEnumerable<Entity> FindEntities(Aspect aspect) => GetEntitiesForAspect(aspect);
 
         /// <summary>
         /// Thread safe

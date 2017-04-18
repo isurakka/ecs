@@ -1,0 +1,3 @@
+[submodule "AsyncEx"]
+	path = AsyncEx
+	url = https://github.com/isurakka/AsyncEx.git

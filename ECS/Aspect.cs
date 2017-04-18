@@ -1,38 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
 
 namespace ECS
 {
-    // TODO: Remove static and support passing mapper to Aspect in some way when caching
-    public static class AspectMapper
-    {
-        private static readonly Dictionary<Type, int> ShiftForType = new Dictionary<Type, int>();
-
-        public static BigInteger TypesToBigInteger(params Type[] types)
-        {
-            return TypesToBigInteger((IEnumerable<Type>)types);
-        }
-
-        public static BigInteger TypesToBigInteger(IEnumerable<Type> types)
-        {
-            var ret = BigInteger.Zero;
-            foreach (var type in types)
-            {
-                Debug.Assert(typeof(object).IsAssignableFrom(type),
-                    $"{nameof(AspectMapper)} should only be used with object types");
-                if (!ShiftForType.TryGetValue(type, out int shift))
-                {
-                    shift = ShiftForType.Count;
-                    ShiftForType[type] = shift;
-                }
-                ret |= BigInteger.One << shift;
-            }
-            return ret;
-        }
-    }
 
     public class Aspect
     {
@@ -77,7 +49,7 @@ namespace ECS
 
         private Cached cache;
         public Cached Cache
-            => cache ?? (cache = new Cached(AspectMapper.TypesToBigInteger(all), AspectMapper.TypesToBigInteger(any)));
+            => cache ?? (cache = new Cached(componentMapper.TypesToBigInteger(all), componentMapper.TypesToBigInteger(any)));
 
         public class Cached
         {

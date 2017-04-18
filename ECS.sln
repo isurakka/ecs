@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECS", "ECS\ECS.csproj", "{E1CC36C3-3CC6-4237-ACD1-5193755FBED5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECS.Tests", "ECS.Tests\ECS.Tests.csproj", "{5746D64E-449C-40A3-81A4-12EB2B53DCE7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nito.AsyncEx.Coordination", "AsyncEx\src\Nito.AsyncEx.Coordination\Nito.AsyncEx.Coordination.csproj", "{9E64FA89-E53A-4A2A-83A5-1CB83E94A627}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nito.AsyncEx.Tasks", "AsyncEx\src\Nito.AsyncEx.Tasks\Nito.AsyncEx.Tasks.csproj", "{6F15E3A6-6964-407C-8F55-4005F64051EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{5746D64E-449C-40A3-81A4-12EB2B53DCE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5746D64E-449C-40A3-81A4-12EB2B53DCE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5746D64E-449C-40A3-81A4-12EB2B53DCE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E64FA89-E53A-4A2A-83A5-1CB83E94A627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E64FA89-E53A-4A2A-83A5-1CB83E94A627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E64FA89-E53A-4A2A-83A5-1CB83E94A627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E64FA89-E53A-4A2A-83A5-1CB83E94A627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F15E3A6-6964-407C-8F55-4005F64051EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F15E3A6-6964-407C-8F55-4005F64051EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F15E3A6-6964-407C-8F55-4005F64051EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F15E3A6-6964-407C-8F55-4005F64051EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
