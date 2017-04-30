@@ -10,17 +10,17 @@ using Nito.AsyncEx;
 
 namespace ECS
 {
-    public enum ComponentAccess
+    public enum ComponentAccessMode
     {
         Read,
         Write,
     }
 
-    public class ComponentAccess<T> : IDisposable
+    public class ComponentAccess : IDisposable
     {
         internal List<IDisposable> Acquires;
         internal ConcurrentDictionary<Guid, AsyncCountdownEvent> FreedEvents;
-        public T Components { get; internal set; }
+        public List<Entity> Entities { get; internal set; }
 
         public void Dispose()
         {

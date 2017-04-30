@@ -35,15 +35,6 @@ namespace ECS
         private Entity[] entityCache = new Entity[0];
         private Dictionary<int, bool>[] entityInterestedCache = new Dictionary<int, bool>[0];
         private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
-        
-        private static EntityComponentSystem instance;
-        /// <summary>
-        /// Get the singleton instance. This will probably not be singleton in the future.
-        /// </summary>
-        public static EntityComponentSystem Instance 
-            => instance ?? (instance = new EntityComponentSystem());
-
-        private EntityComponentSystem() {  }
 
         /// <summary>
         /// Thread safe
@@ -183,8 +174,8 @@ namespace ECS
                 .Where(c => c != null);
         }
 
-        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TComponent0>(
-            ComponentAccess componentAccess0)
+        public async Task<ComponentAccess> GetComponents<TComponent0>(
+            ComponentAccessMode componentAccess0)
         {
             var freedEvent = new AsyncCountdownEvent(0);
             var guid = Guid.NewGuid();
@@ -198,7 +189,7 @@ namespace ECS
             await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
 
             IDisposable lock0;
-            if (componentAccess0 == ComponentAccess.Write)
+            if (componentAccess0 == ComponentAccessMode.Write)
             {
                 lock0 = componentLocks[typeof(TComponent0)].TryWriterLock();
             }
@@ -220,11 +211,11 @@ namespace ECS
             success = componentsFreed.TryRemove(guid, out var _);
             if (!success) throw new InvalidOperationException();
 
-            return new ComponentAccess<IEnumerable<TComponent0>>
+            return new ComponentAccess
             {
                 FreedEvents = componentsFreed,
                 Acquires = new List<IDisposable> { lock0 },
-                Components = components[typeof(TComponent0)].Cast<TComponent0>(),
+                Entities = GetEntities(typeof(TComponent0)),
             };
         }
 
@@ -310,6 +301,25 @@ namespace ECS
             }
 
             return entityChanges;
+        }
+
+        private List<Entity> GetEntities(params Type[] types)
+        {
+            var typesHash = componentMapper.TypesToBigInteger(types);
+
+            var ret = new List<Entity>();
+            for (int i = 0; i < componentArraySize; i++)
+            {
+                if (EntityComponentBits[i] == null) continue;
+
+                var interested = componentMapper.Interested(EntityComponentBits[i].Value, typesHash);
+
+                if (interested)
+                {
+                    ret.Add(entityCache[i]);
+                }
+            }
+            return ret;
         }
 
         // TODO: Is this needed and is this right place for this method?
