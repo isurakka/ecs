@@ -11,7 +11,7 @@ using System.Collections.Concurrent;
 
 namespace ECS
 {
-    public class EntityComponentSystem
+    public partial class EntityComponentSystem
     {
         private int nextEntityId;
         private int componentArraySize;
@@ -23,8 +23,10 @@ namespace ECS
         private readonly Dictionary<Type, object[]> components = new Dictionary<Type, object[]>();
         // key = component type, value = readwritelock for a component
         private readonly Dictionary<Type, AsyncReaderWriterLock> componentLocks = new Dictionary<Type, AsyncReaderWriterLock>();
-        // lock to start using components
+        // lock to start trying to acquire read/write lock
         private readonly SemaphoreSlim componentLockAcquirer = new SemaphoreSlim(0, 1);
+
+        private readonly ConcurrentDictionary<Guid, AsyncCountdownEvent> componentsFreed = new ConcurrentDictionary<Guid, AsyncCountdownEvent>();
 
         // entity related
         // array of component bitsets where key is entity id
@@ -181,48 +183,47 @@ namespace ECS
                 .Where(c => c != null);
         }
 
-        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TAccessType0, TComponent0>()
-            where TAccessType0: Read
+        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TComponent0>(
+            ComponentAccess componentAccess0)
         {
+            var freedEvent = new AsyncCountdownEvent(0);
+            var guid = Guid.NewGuid();
+            var success = componentsFreed.TryAdd(guid, freedEvent);
+            if (!success) throw new InvalidOperationException();
+
             start:
-            //await componentLocksFreed.WaitAsync().ConfigureAwait(false);
+            await freedEvent.WaitAsync();
+            // Deadlock possible here?
+            freedEvent.AddCount();
             await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
 
-            var read0Lock = componentLocks[typeof(TComponent0)].TryReaderLock();
-            if (read0Lock == null)
+            IDisposable lock0;
+            if (componentAccess0 == ComponentAccess.Write)
+            {
+                lock0 = componentLocks[typeof(TComponent0)].TryWriterLock();
+            }
+            else
+            {
+                lock0 = componentLocks[typeof(TComponent0)].TryReaderLock();
+            }
+
+            if (lock0 == null)
             {
                 componentLockAcquirer.Release();
                 goto start;
             }
 
-            componentLockAcquirer.Release();
-
-            return new ComponentAccess<IEnumerable<TComponent0>>
-            {
-                Acquires = new List<IDisposable> { read0Lock },
-                Components = components[typeof(TComponent0)].Cast<TComponent0>(),
-            };
-        }
-
-        public async Task<ComponentAccess<IEnumerable<TComponent0>>> GetComponents<TAccessType0, TComponent0>()
-            where TAccessType0 : Write
-        {
-            start:
-            //await componentLocksFreed.WaitAsync().ConfigureAwait(false);
-            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
-
-            var read0Lock = componentLocks[typeof(TComponent0)].TryReaderLock();
-            if (read0Lock == null)
-            {
-                componentLockAcquirer.Release();
-                goto start;
-            }
+            // We got all read/write locks here
 
             componentLockAcquirer.Release();
 
+            success = componentsFreed.TryRemove(guid, out var _);
+            if (!success) throw new InvalidOperationException();
+
             return new ComponentAccess<IEnumerable<TComponent0>>
             {
-                Acquires = new List<IDisposable> { read0Lock },
+                FreedEvents = componentsFreed,
+                Acquires = new List<IDisposable> { lock0 },
                 Components = components[typeof(TComponent0)].Cast<TComponent0>(),
             };
         }
@@ -276,31 +277,6 @@ namespace ECS
 
             return components[component.GetType()][entity.Id] != null;
         }
-
-        /*
-        private IEnumerable<Entity> GetEntitiesForAspect(Aspect aspect)
-        {
-            var ret = new List<Entity>();
-            for (int i = 0; i < componentArraySize; i++)
-            {
-                if (EntityComponentBits[i] == null) continue;
-
-                var aspectHash = aspect.GetHashCode();
-                if (!entityInterestedCache[i].TryGetValue(aspectHash, out bool interested))
-                {
-                    // TODO: Don't cache aspect here
-                    interested = aspect.Cache.Interested(EntityComponentBits[i].Value);
-                    entityInterestedCache[i][aspectHash] = interested;
-                }
-
-                if (interested)
-                {
-                    ret.Add(entityCache[i]);
-                }
-            }
-            return ret;
-        }
-        */
 
         private IEnumerable<EntityChange> FlushPending()
         {

@@ -68,13 +68,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="AspectTests.cs" />
-    <Compile Include="UsageTests.cs" />
-    <Compile Include="IntervalEntitySystemTests.cs" />
-    <Compile Include="EntitySystemTests.cs" />
-    <Compile Include="EntityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestClasses.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ECS\ECS.csproj">
