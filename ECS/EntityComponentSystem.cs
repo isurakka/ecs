@@ -219,6 +219,61 @@ namespace ECS
             };
         }
 
+        public async Task<ComponentAccess> GetAllComponents(ComponentAccessMode componentAccess)
+        {
+            var freedEvent = new AsyncCountdownEvent(0);
+            var guid = Guid.NewGuid();
+            var success = componentsFreed.TryAdd(guid, freedEvent);
+            if (!success) throw new InvalidOperationException();
+
+            start:
+            await freedEvent.WaitAsync();
+            // Deadlock possible here?
+            freedEvent.AddCount();
+            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
+
+            var allLocked = new List<IDisposable>();
+            foreach (var pair in componentLocks)
+            {
+                IDisposable locked;
+                if (componentAccess == ComponentAccessMode.Write)
+                {
+                    locked = pair.Value.TryWriterLock();
+                }
+                else
+                {
+                    locked = pair.Value.TryReaderLock();
+                }
+
+                if (locked == null)
+                {
+                    foreach (var alreadyLocked in allLocked)
+                    {
+                        alreadyLocked.Dispose();
+                    }
+
+                    componentLockAcquirer.Release();
+                    goto start;
+                }
+
+                allLocked.Add(locked);
+            }
+
+            // We got all read/write locks here
+
+            componentLockAcquirer.Release();
+
+            success = componentsFreed.TryRemove(guid, out var _);
+            if (!success) throw new InvalidOperationException();
+
+            return new ComponentAccess
+            {
+                FreedEvents = componentsFreed,
+                Acquires = allLocked,
+                Entities = entityCache.Where(e => e != null).ToList(),
+            };
+        }
+
         /// <summary>
         /// Thread safe
         /// </summary>
