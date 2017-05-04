@@ -7,6 +7,8 @@ namespace ECS
     {
         public int Id { get; }
 
+        public IEnumerable<object> Components => ecs.GetComponents(this);
+
         private readonly EntityComponentSystem ecs;
 
         internal Entity(int id, EntityComponentSystem ecs)
