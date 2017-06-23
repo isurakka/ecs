@@ -18,8 +18,9 @@ namespace ECS
 
     public class ComponentAccess : IDisposable
     {
-        internal List<IDisposable> Acquires;
-        internal ConcurrentDictionary<Guid, AsyncCountdownEvent> FreedEvents;
+        internal IDisposable[] Acquires;
+        internal BigInteger AcquiredTypesHash;
+        internal IObserver<BigInteger> TypesFreed;
         public List<Entity> Entities { get; internal set; }
 
         public void Dispose()
@@ -29,10 +30,7 @@ namespace ECS
                 item.Dispose();
             }
 
-            foreach (var item in FreedEvents)
-            {
-                item.Value.Signal();
-            }
+            TypesFreed.OnNext(AcquiredTypesHash);
         }
     }
 }

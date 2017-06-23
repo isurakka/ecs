@@ -35,6 +35,7 @@ namespace ECS
         private Entity[] entityCache = new Entity[0];
         private Dictionary<int, bool>[] entityInterestedCache = new Dictionary<int, bool>[0];
         private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
+        private Subject<BigInteger> typesFreed = new Subject<BigInteger>();
 
         /// <summary>
         /// Thread safe
@@ -164,6 +165,84 @@ namespace ECS
             entityInterestedCache[id].Clear();
         }
 
+        public Task WhenCanTryAcquireComponents(BigInteger componentTypes)
+        {
+            var semaphore = new SemaphoreSlim(1, 1);
+            var disposable = typesFreed.Subscribe(types =>
+            {
+                if (componentMapper.Intersects(componentTypes, types))
+                {
+                    semaphore.Release();
+                }
+            });
+            return semaphore
+                .WaitAsync()
+                .ContinueWith(t => disposable.Dispose());
+        }
+
+        public async Task<ComponentAccess> GetComponents(Type[] componentTypes, ComponentAccessMode[] accessModes)
+        {
+            var typesHash = componentMapper.TypesToBigInteger(componentTypes);
+
+            var first = true;
+
+            start:
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                await WhenCanTryAcquireComponents(typesHash).ConfigureAwait(false);
+            }
+            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
+
+            var gotAllLocks = true;
+            var acquiredLocks = new IDisposable[componentTypes.Length];
+            for (int i = 0; i < componentTypes.Length; i++)
+            {
+                var accessMode = accessModes[i];
+                var componentType = componentTypes[i];
+
+                IDisposable acquiredLock;
+                if (accessModes[i] == ComponentAccessMode.Write)
+                {
+                    acquiredLock = componentLocks[componentType].TryWriterLock();
+                }
+                else
+                {
+                    acquiredLock = componentLocks[componentType].TryReaderLock();
+                }
+
+                if (acquiredLock == null)
+                {
+                    gotAllLocks = false;
+                    for (int j = 0; j < i; j++)
+                    {
+                        acquiredLocks[j].Dispose();
+                    }
+                    break;
+                }
+
+                acquiredLocks[i] = acquiredLock;
+            }
+
+            if (gotAllLocks)
+            {
+                return new ComponentAccess
+                {
+                    Acquires = acquiredLocks,
+                    AcquiredTypesHash = typesHash,
+                    TypesFreed = typesFreed,
+                    Entities = GetEntities(componentTypes),
+                };
+            }
+            else
+            {
+                goto start;
+            }
+        }
+
         /// <summary>
         /// Thread safe
         /// </summary>
@@ -174,6 +253,7 @@ namespace ECS
                 .Where(c => c != null);
         }
 
+        /*
         public async Task<ComponentAccess> GetComponents<TComponent0>(
             ComponentAccessMode componentAccess0)
         {
@@ -273,6 +353,7 @@ namespace ECS
                 Entities = entityCache.Where(e => e != null).ToList(),
             };
         }
+        */
 
         /// <summary>
         /// Thread safe

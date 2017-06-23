@@ -88,8 +88,6 @@
     <Compile Include="Entity.cs" />
     <Compile Include="EntityComponentSystem.cs" />
     <Compile Include="DictionaryExt.cs" />
-    <None Include="EntityComponentSystemGenerated.csx" />
-    <Compile Include="EntityComponentSystemGenerated.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ComponentAccess.cs" />
   </ItemGroup>

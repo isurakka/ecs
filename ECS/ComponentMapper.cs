@@ -30,5 +30,6 @@ namespace ECS
         }
 
         public bool Interested(BigInteger superset, BigInteger subset) => (superset & subset) == subset;
+        public bool Intersects(BigInteger a, BigInteger b) => (a & b) != BigInteger.Zero;
     }
 }
