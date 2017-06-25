@@ -182,6 +182,11 @@ namespace ECS
                 .ContinueWith(t => disposable.Dispose());
         }
 
+        public async Task WhenCanTryAcquireAllComponents()
+        {
+            await typesFreed.FirstAsync();
+        }
+
         public EntityChangeMonitor StartMonitoringForComponentsAdded(params Type[] componentTypes)
         {
             var ecm = new EntityChangeMonitor(this, componentTypes);
@@ -251,6 +256,67 @@ namespace ECS
                     AcquiredTypesHash = typesHash,
                     TypesFreed = typesFreed,
                     Entities = GetEntities(componentTypes),
+                };
+            }
+            else
+            {
+                goto start;
+            }
+        }
+
+        public async Task<ComponentAccess> GetAllComponents(ComponentAccessMode accessMode)
+        {
+            var first = true;
+
+            start:
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                await WhenCanTryAcquireAllComponents().ConfigureAwait(false);
+            }
+            await componentLockAcquirer.WaitAsync().ConfigureAwait(false);
+
+            var gotAllLocks = true;
+            var locksKeys = componentLocks.Keys.ToArray();
+            var acquiredLocks = new IDisposable[locksKeys.Length];
+            for (int i = 0; i < locksKeys.Length; i++)
+            {
+                IDisposable acquiredLock;
+                if (accessMode == ComponentAccessMode.Write)
+                {
+                    acquiredLock = componentLocks[locksKeys[i]].TryWriterLock();
+                }
+                else
+                {
+                    acquiredLock = componentLocks[locksKeys[i]].TryReaderLock();
+                }
+
+                if (acquiredLock == null)
+                {
+                    gotAllLocks = false;
+                    for (int j = 0; j < i; j++)
+                    {
+                        acquiredLocks[j].Dispose();
+                    }
+                    break;
+                }
+
+                acquiredLocks[i] = acquiredLock;
+            }
+
+            
+
+            if (gotAllLocks)
+            {
+                return new ComponentAccess
+                {
+                    Acquires = acquiredLocks,
+                    AcquiredTypesHash = componentMapper.TypesToBigInteger(components.Keys.ToArray()),
+                    TypesFreed = typesFreed,
+                    Entities = GetEntities(components.Keys.ToArray()),
                 };
             }
             else
