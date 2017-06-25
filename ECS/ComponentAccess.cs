@@ -15,4 +15,9 @@ namespace ECS
         Read,
         Write,
     }
+
+    public class ComponentAccess
+    {
+
+    }
 }
