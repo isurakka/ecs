@@ -15,22 +15,4 @@ namespace ECS
         Read,
         Write,
     }
-
-    public class ComponentAccess : IDisposable
-    {
-        internal IDisposable[] Acquires;
-        internal BigInteger AcquiredTypesHash;
-        internal IObserver<BigInteger> TypesFreed;
-        public List<Entity> Entities { get; internal set; }
-
-        public void Dispose()
-        {
-            foreach (var item in Acquires)
-            {
-                item.Dispose();
-            }
-
-            TypesFreed.OnNext(AcquiredTypesHash);
-        }
-    }
 }
