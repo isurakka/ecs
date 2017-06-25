@@ -16,7 +16,7 @@ namespace ECS
         private int nextEntityId;
         private int componentArraySize;
 
-        private readonly ComponentMapper componentMapper = new ComponentMapper();
+        internal readonly ComponentMapper componentMapper = new ComponentMapper();
 
         // component related
         // key = component type, value = array of components where key is entity id
@@ -36,6 +36,8 @@ namespace ECS
         private Dictionary<int, bool>[] entityInterestedCache = new Dictionary<int, bool>[0];
         private readonly ThreadLocal<Queue<EntityChange>> pendingEntityChanges = new ThreadLocal<Queue<EntityChange>>(() => new Queue<EntityChange>(), true);
         private Subject<BigInteger> typesFreed = new Subject<BigInteger>();
+
+        private List<EntityChangeMonitor> currentlyMonitored = new List<EntityChangeMonitor>();
 
         /// <summary>
         /// Thread safe
@@ -178,6 +180,20 @@ namespace ECS
             return semaphore
                 .WaitAsync()
                 .ContinueWith(t => disposable.Dispose());
+        }
+
+        public EntityChangeMonitor StartMonitoringForComponentsAdded(params Type[] componentTypes)
+        {
+            var ecm = new EntityChangeMonitor(this, componentTypes);
+            currentlyMonitored.Add(ecm);
+            ecm.TriggerInitialChanges();
+            return ecm;
+        }
+
+        public void StopMonitoringForChanges(EntityChangeMonitor monitor)
+        {
+            currentlyMonitored.Remove(monitor);
+            monitor.TriggerRemoval();
         }
 
         public async Task<ComponentAccess> GetComponents(Type[] componentTypes, ComponentAccessMode[] accessModes)
@@ -331,13 +347,17 @@ namespace ECS
                     }
 
                     entityChanges.Add(entityChange);
+
+                    foreach (var monitor in currentlyMonitored)
+                    {
+                        monitor.AddChange(entityChange);
+                    }
                 }
             }
-
             return entityChanges;
         }
 
-        private List<Entity> GetEntities(params Type[] types)
+        internal List<Entity> GetEntities(params Type[] types)
         {
             var typesHash = componentMapper.TypesToBigInteger(types);
 

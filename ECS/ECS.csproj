@@ -86,6 +86,7 @@
     <Compile Include="ComponentMapper.cs" />
     <Compile Include="EntityChange.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="EntityChangeMonitor.cs" />
     <Compile Include="EntityComponentSystem.cs" />
     <Compile Include="DictionaryExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
