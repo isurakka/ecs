@@ -34,7 +34,7 @@ namespace ECS
 
         // key = component index
         private AsyncReaderWriterLock[] componentLocks = new[] { new AsyncReaderWriterLock() };
-        private SemaphoreSlim componentLocksAcquirer = new SemaphoreSlim(0, 1);
+        private SemaphoreSlim componentLocksAcquirer = new SemaphoreSlim(1, 1);
         private readonly Subject<BigInteger> typesFreed = new Subject<BigInteger>();
 
         private readonly ComponentMapper componentMapper = new ComponentMapper();
@@ -83,11 +83,16 @@ namespace ECS
 
         public Task WhenCanTryAcquireComponents(BigInteger componentTypes)
         {
-            var semaphore = new SemaphoreSlim(1, 1);
+            var semaphore = new SemaphoreSlim(0, 1);
+            var released = false;
             var disposable = typesFreed.Subscribe(types =>
             {
-                if (componentMapper.Intersects(componentTypes, types))
+                if (released) return;
+
+                // Don't do this for now because it causes a lot of slowdowns
+                //if (componentMapper.Intersects(componentTypes, types))
                 {
+                    released = true;
                     semaphore.Release();
                 }
             });
@@ -104,6 +109,8 @@ namespace ECS
         public async Task<ComponentAccess> GetEntities(Type[] componentTypes, ComponentAccessMode[] accessModes)
         {
             var typesHash = componentMapper.TypesToBigInteger(componentTypes);
+            var nextTry = WhenCanTryAcquireComponents(typesHash);
+            Task pendingTry = null;
 
             var first = true;
 
@@ -114,11 +121,15 @@ namespace ECS
             }
             else
             {
-                await WhenCanTryAcquireComponents(typesHash).ConfigureAwait(false);
+                pendingTry = WhenCanTryAcquireComponents(typesHash);
+                await nextTry.ConfigureAwait(false);
+                nextTry = pendingTry;
+                pendingTry = null;
             }
             await componentLocksAcquirer.WaitAsync().ConfigureAwait(false);
 
             var gotAllLocks = true;
+            var returnEmpty = false;
             var acquiredLocks = new IDisposable[componentTypes.Length];
             for (int i = 0; i < componentTypes.Length; i++)
             {
@@ -126,14 +137,21 @@ namespace ECS
                 var componentType = componentTypes[i];
                 var componentIndex = componentMapper.GetIndexForType(componentType);
 
-                IDisposable acquiredLock;
-                if (accessModes[i] == ComponentAccessMode.Write)
+                IDisposable acquiredLock = null;
+                if (componentIndex < componentLocks.Length)
                 {
-                    acquiredLock = componentLocks[componentIndex].TryWriterLock();
+                    if (accessModes[i] == ComponentAccessMode.Write)
+                    {
+                        acquiredLock = componentLocks[componentIndex].TryWriterLock();
+                    }
+                    else
+                    {
+                        acquiredLock = componentLocks[componentIndex].TryReaderLock();
+                    }
                 }
                 else
                 {
-                    acquiredLock = componentLocks[componentIndex].TryReaderLock();
+                    returnEmpty = true;
                 }
 
                 if (acquiredLock == null)
@@ -150,6 +168,11 @@ namespace ECS
             }
 
             componentLocksAcquirer.Release();
+
+            if (returnEmpty)
+            {
+                return new ComponentAccess(() => { }, ImmutableDictionary<int, ImmutableDictionary<Type, object>>.Empty);
+            }
 
             if (!gotAllLocks) goto start;
 
@@ -169,13 +192,25 @@ namespace ECS
 
                 var entityComponents = components[entityIndex];
 
+                var addEntity = true;
                 var builder = ImmutableDictionary.CreateBuilder<Type, object>();
 
                 for (int componentIndexRet = 0; componentIndexRet < componentIndices.Length; componentIndexRet++)
                 {
+                    if (componentIndices[componentIndexRet] >= entityComponents.Length)
+                    {
+                        addEntity = false;
+                        break;
+                    }
+
                     var entityComponent = entityComponents[componentIndices[componentIndexRet]];
                     var entityComponentType = componentTypes[componentIndexRet];
                     builder.Add(entityComponentType, entityComponent);
+                }
+
+                if (!addEntity)
+                {
+                    continue;
                 }
 
                 entitiesWithComponents.Add(entityIndex, builder.ToImmutable());
@@ -185,7 +220,7 @@ namespace ECS
             {
                 foreach (var acquiredLock in acquiredLocks)
                 {
-                    acquiredLock.Dispose();
+                    acquiredLock?.Dispose();
                 }
 
                 typesFreed.OnNext(typesHash);
@@ -194,6 +229,9 @@ namespace ECS
 
         public async Task<ComponentAccess> GetAllEntities(ComponentAccessMode accessMode)
         {
+            var nextTry = WhenCanTryAcquireAllComponents();
+            Task pendingTry = null;
+
             var first = true;
 
             start:
@@ -203,7 +241,10 @@ namespace ECS
             }
             else
             {
-                await WhenCanTryAcquireAllComponents().ConfigureAwait(false);
+                pendingTry = WhenCanTryAcquireAllComponents();
+                await nextTry.ConfigureAwait(false);
+                nextTry = pendingTry;
+                pendingTry = null;
             }
             await componentLocksAcquirer.WaitAsync().ConfigureAwait(false);
 
@@ -211,19 +252,27 @@ namespace ECS
             var typesHash = componentMapper.TypesToBigInteger(componentTypes);
 
             var gotAllLocks = true;
+            var returnEmpty = false;
             var acquiredLocks = new IDisposable[componentTypes.Count];
             for (int i = 0; i < componentTypes.Count; i++)
             {
                 var componentIndex = componentMapper.GetIndexForType(componentTypes[i]);
 
-                IDisposable acquiredLock;
-                if (accessMode == ComponentAccessMode.Write)
+                IDisposable acquiredLock = null;
+                if (componentIndex < componentLocks.Length)
                 {
-                    acquiredLock = componentLocks[componentIndex].TryWriterLock();
+                    if (accessMode == ComponentAccessMode.Write)
+                    {
+                        acquiredLock = componentLocks[componentIndex].TryWriterLock();
+                    }
+                    else
+                    {
+                        acquiredLock = componentLocks[componentIndex].TryReaderLock();
+                    }
                 }
                 else
                 {
-                    acquiredLock = componentLocks[componentIndex].TryReaderLock();
+                    returnEmpty = true;
                 }
 
                 if (acquiredLock == null)
@@ -240,6 +289,11 @@ namespace ECS
             }
 
             componentLocksAcquirer.Release();
+
+            if (returnEmpty)
+            {
+                return new ComponentAccess(() => { }, ImmutableDictionary<int, ImmutableDictionary<Type, object>>.Empty);
+            }
 
             if (!gotAllLocks) goto start;
 
@@ -293,8 +347,19 @@ namespace ECS
                     case ChangeType.EntityAdded:
                         if (change.entityId >= components.Length)
                         {
+                            var oldComponentsSize = components.Length;
                             Array.Resize(ref components, components.Length * 2);
+                            for (int i = oldComponentsSize; i < components.Length; i++)
+                            {
+                                components[i] = new object[1];
+                            }
+
+                            var oldEntityComponentCacheSize = entityComponentCache.Length;
                             Array.Resize(ref entityComponentCache, entityComponentCache.Length * 2);
+                            for (int i = oldEntityComponentCacheSize; i < entityComponentCache.Length; i++)
+                            {
+                                entityComponentCache[i] = new BigInteger();
+                            }
                         }
                         Debug.Assert(entityComponentCache[change.entityId] == BigInteger.Zero);
                         // notify subscribers
@@ -308,10 +373,21 @@ namespace ECS
                             var componentType = change.component.GetType();
                             var componentIndex = componentMapper.GetIndexForType(componentType);
                             var componentArray = components[change.entityId];
-                            if (componentIndex >= componentArray.Length)
+                            while (componentIndex >= componentArray.Length)
                             {
+                                var oldComponentArraySize = componentArray.Length;
                                 Array.Resize(ref componentArray, componentArray.Length * 2);
+                                for (int i = oldComponentArraySize; i < componentArray.Length; i++)
+                                {
+                                    componentArray[i] = null;
+                                }
+
+                                var oldComponentLocksSize = componentLocks.Length;
                                 Array.Resize(ref componentLocks, componentLocks.Length * 2);
+                                for (int i = oldComponentLocksSize; i < componentLocks.Length; i++)
+                                {
+                                    componentLocks[i] = new AsyncReaderWriterLock();
+                                }
                             }
                             Debug.Assert(componentArray[componentIndex] == null);
                             componentMapper.AddTypeToBigInteger(ref entityComponentCache[change.entityId], componentType);
