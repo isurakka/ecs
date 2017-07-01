@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -23,6 +24,8 @@ namespace ECS
         // first index = entity, second index = component
         private object[][] components = new[] { new object[1] };
         private readonly ConcurrentQueue<(ChangeType changeType, int entityId, object component)> changes = new ConcurrentQueue<(ChangeType changeType, int entityId, object component)>();
+
+        private readonly ComponentMapper componentMapper = new ComponentMapper();
 
         /// <summary>
         /// Thread safe. The entity starts existing after a call to Flush.
@@ -66,6 +69,16 @@ namespace ECS
             changes.Enqueue((ChangeType.ComponentRemoved, entityId, component));
         }
 
+        private class EntityComponentAccessor : IDictionary<Type, object>
+        {
+
+        }
+
+        public Task<ComponentAccess> GetEntities(Type[] types, ComponentAccessMode[] accessModes)
+        {
+            
+        }
+
         /// <summary>
         /// NOT thread safe. Other operations are not allowed if this is being called. Makes all pending changes concrete.
         /// </summary>
@@ -79,16 +92,36 @@ namespace ECS
                 switch (change.changeType)
                 {
                     case ChangeType.EntityAdded:
-                        if (change.entityId > components.GetLength(0))
+                        if (change.entityId >= components.Length)
                         {
-                            Array.Resize(ref components, components.GetLength(0) * 2);
+                            Array.Resize(ref components, components.Length * 2);
                         }
+                        // notify subscribers
                         break;
                     case ChangeType.EntityRemoved:
+                        // notify subscribers
                         break;
                     case ChangeType.ComponentAdded:
+                        {
+                            var componentIndex = componentMapper.GetIndexForType(change.component.GetType());
+                            var componentArray = components[change.entityId];
+                            if (componentIndex >= componentArray.Length)
+                            {
+                                Array.Resize(ref componentArray, componentArray.Length * 2);
+                            }
+                            Debug.Assert(componentArray[componentIndex] == null);
+                            componentArray[componentIndex] = change.component;
+                            // notify subscribers
+                        }
                         break;
                     case ChangeType.ComponentRemoved:
+                        {
+                            // notify subscribers
+                            var componentIndex = componentMapper.GetIndexForType(change.component.GetType());
+                            var componentArray = components[change.entityId];
+                            Debug.Assert(componentArray[componentIndex] != null);
+                            componentArray[componentIndex] = null;
+                        }
                         break;
                     default:
                         throw new NotSupportedException();

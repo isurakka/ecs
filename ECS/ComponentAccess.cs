@@ -16,8 +16,20 @@ namespace ECS
         Write,
     }
 
-    public class ComponentAccess
+    public class ComponentAccess : IDisposable
     {
+        private Action cleanUp;
+        public readonly Dictionary<int, IDictionary<Type, object>> Entities;
 
+        internal ComponentAccess(Action cleanUp, Dictionary<int, IDictionary<Type, object>> entities)
+        {
+            this.cleanUp = cleanUp;
+            Entities = entities;
+        }
+
+        public void Dispose()
+        {
+            cleanUp();
+        }
     }
 }
