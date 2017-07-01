@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 
 namespace ECS
@@ -8,7 +11,8 @@ namespace ECS
     public class ComponentMapper
     {
         //public int NextTypeIndex => ShiftForType.Count;
-        private readonly Dictionary<Type, int> ShiftForType = new Dictionary<Type, int>();
+        internal List<Type> AllComponentTypes => ShiftForType.Keys.ToList();
+        private readonly ConcurrentDictionary<Type, int> ShiftForType = new ConcurrentDictionary<Type, int>();
 
         public BigInteger TypesToBigInteger(params Type[] types)
         {
@@ -28,13 +32,31 @@ namespace ECS
 
         public int GetIndexForType(Type type)
         {
+            Debug.Assert(ShiftForType.Values.GroupBy(v => v).All(group => group.Count() == 1));
+
+            // TODO: Is this thread unsafe?
+            return ShiftForType.GetOrAdd(type, t => ShiftForType.Count);
+
+            /*
             if (!ShiftForType.TryGetValue(type, out int shift))
             {
                 shift = ShiftForType.Count;
                 ShiftForType[type] = shift;
             }
+            
 
             return shift;
+            */
+        }
+
+        public void AddTypeToBigInteger(ref BigInteger bi, Type type)
+        {
+            bi = bi | TypesToBigInteger(type);
+        }
+
+        public void RemoveTypeFromBigInteger(ref BigInteger bi, Type type)
+        {
+            bi = bi & ~TypesToBigInteger(type);
         }
 
         public bool Interested(BigInteger superset, BigInteger subset) => (superset & subset) == subset;

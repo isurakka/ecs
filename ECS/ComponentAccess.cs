@@ -7,6 +7,7 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
+using System.Collections.Immutable;
 
 namespace ECS
 {
@@ -19,9 +20,9 @@ namespace ECS
     public class ComponentAccess : IDisposable
     {
         private Action cleanUp;
-        public readonly Dictionary<int, IDictionary<Type, object>> Entities;
+        public readonly ImmutableDictionary<int, ImmutableDictionary<Type, object>> Entities;
 
-        internal ComponentAccess(Action cleanUp, Dictionary<int, IDictionary<Type, object>> entities)
+        internal ComponentAccess(Action cleanUp, ImmutableDictionary<int, ImmutableDictionary<Type, object>> entities)
         {
             this.cleanUp = cleanUp;
             Entities = entities;
